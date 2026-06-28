@@ -38,10 +38,7 @@ services:
     networks:
       - substrata-private
     command: >
-      sh -c "
-      pnpm --filter @substrata/db exec prisma migrate deploy --schema prisma/schema.prisma &&
-      pnpm --filter @substrata/db exec tsx prisma/seed.ts
-      "
+      pnpm --filter @substrata/db exec prisma migrate deploy --schema prisma/schema.prisma
 
   api:
     build:
