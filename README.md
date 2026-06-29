@@ -62,6 +62,7 @@ Substrata is an ECCN review assistant for semiconductor and advanced hardware te
 
 - `APP_URL`: browser-facing web origin, used for verification, reset, and invite links.
 - `API_URL`: browser-facing API origin.
+- In Docker Compose production, `DATABASE_URL` must use the Compose service hostname `postgres`, not `localhost` or `127.0.0.1`. Example: `postgresql://USER:PASSWORD@postgres:5432/substrata?schema=public`
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI`: Google OAuth client settings. The redirect URI must exactly match the API callback route.
 - `SESSION_SECRET`: required in any environment that uses real auth. Used to hash session and one-time auth tokens.
 - `SESSION_COOKIE_NAME`: opaque session cookie name.

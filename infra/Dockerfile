@@ -40,4 +40,4 @@ FROM web-build AS web
 ENV NODE_ENV=production
 EXPOSE 3100
 
-CMD ["sh", "-c", "pnpm --filter @substrata/web exec next start -H 0.0.0.0 -p 3100"]
+CMD ["node", ".next/standalone/server.js"]

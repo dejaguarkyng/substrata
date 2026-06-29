@@ -41,6 +41,20 @@ require_command date
 cd "$APP_DIR" || fail "Application directory not found: $APP_DIR"
 [[ -f "$ENV_FILE" ]] || fail "Missing environment file: $ENV_FILE"
 
+set -a
+# shellcheck disable=SC1090
+source "$ENV_FILE"
+set +a
+
+for required_var in POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD DATABASE_URL; do
+  [[ -n "${!required_var:-}" ]] || fail "${required_var} is missing from $ENV_FILE"
+done
+
+DATABASE_HOST="$(printf '%s' "$DATABASE_URL" | sed -E 's|^[^@]+@([^:/?]+).*|\1|')"
+if [[ "$DATABASE_HOST" =~ ^(localhost|127\.0\.0\.1|::1)$ ]]; then
+  fail "DATABASE_URL in $ENV_FILE points to ${DATABASE_HOST}. In Docker Compose production it must point to the postgres service, for example postgresql://user:password@postgres:5432/${POSTGRES_DB}?schema=public"
+fi
+
 if ! grep -qE '^SESSION_SECRET=.+$' "$ENV_FILE"; then
   fail "SESSION_SECRET is missing from $ENV_FILE"
 fi
@@ -77,8 +91,10 @@ BACKUP_FILE="${BACKUP_DIR}/substrata-${STAMP}.dump"
 TMP_BACKUP_FILE="${BACKUP_FILE}.tmp"
 
 log "Backing up PostgreSQL database"
-docker exec substrata-postgres sh -c \
-  'pg_dump -U "$POSTGRES_USER" -Fc "$POSTGRES_DB"' \
+docker exec \
+  -e PGPASSWORD="$POSTGRES_PASSWORD" \
+  substrata-postgres \
+  pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc \
   > "$TMP_BACKUP_FILE"
 
 [[ -s "$TMP_BACKUP_FILE" ]] || fail "Database backup was empty"
