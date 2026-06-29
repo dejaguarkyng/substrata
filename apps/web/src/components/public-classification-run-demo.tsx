@@ -2,6 +2,7 @@ import React from 'react';
 import type { PublicClassificationRunRecord } from '../lib/types';
 import { buildApiUrl } from '../lib/api-base';
 import { formatDateTime } from '../lib/workspace';
+import { MemoDownloadLink } from './memo-download-link';
 import { Badge, InlineNotice, Panel } from './ui';
 import { MarkdownRenderer } from './markdown-renderer';
 
@@ -90,13 +91,10 @@ export function PublicClassificationRunDemo({
                 </h1>
                 {run.reviewMemo?.contentMarkdown ? (
                   <div className="shrink-0">
-                    <a
+                    <MemoDownloadLink
                       href={buildPublicMemoDownloadHref(run.id)}
-                      download={buildMemoFilename(run)}
-                      className="inline-flex min-h-10 items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                    >
-                      Download memo
-                    </a>
+                      filename={buildMemoFilename(run)}
+                    />
                   </div>
                 ) : null}
               </div>

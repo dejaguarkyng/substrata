@@ -38,3 +38,56 @@ dialog::backdrop {
 ::selection {
   background: rgba(31, 154, 232, 0.18);
 }
+
+.memo-download-link {
+  position: relative;
+  overflow: hidden;
+}
+
+.memo-download-link__rail {
+  position: absolute;
+  left: 0.55rem;
+  right: 0.55rem;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(16, 50, 79, 0) 0%,
+    rgba(31, 154, 232, 0.92) 35%,
+    rgba(52, 198, 239, 0.92) 50%,
+    rgba(16, 50, 79, 0) 100%
+  );
+  background-size: 200% 100%;
+  opacity: 0.85;
+  transition: opacity 180ms ease;
+}
+
+.memo-download-link__rail--top {
+  top: 0.42rem;
+  animation: memo-download-chase 2.1s linear infinite;
+}
+
+.memo-download-link__rail--bottom {
+  bottom: 0.42rem;
+  animation: memo-download-chase 2.1s linear infinite reverse;
+}
+
+.memo-download-link:hover .memo-download-link__rail,
+.memo-download-link:focus-visible .memo-download-link__rail {
+  opacity: 1;
+}
+
+@keyframes memo-download-chase {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .memo-download-link__rail {
+    animation: none;
+  }
+}
