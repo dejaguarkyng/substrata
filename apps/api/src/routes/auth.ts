@@ -31,7 +31,6 @@ import {
   changePassword,
   getAuthMe,
   requestPasswordReset,
-  resendVerificationEmail,
   revokeAllUserSessions,
   revokeSessionById,
   rotateSessionCsrf,
@@ -39,7 +38,6 @@ import {
   signInWithPassword,
   signUpWithPassword,
   updateProfile,
-  verifyEmailToken,
   resetPassword,
 } from '../services/auth.service';
 import { assertRateLimit } from '../services/rate-limit.service';
