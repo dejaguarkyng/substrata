@@ -81,6 +81,7 @@ test('public demo page renders without auth/session controls', () => {
   assert.match(markup, /Public product demo/);
   assert.match(markup, /Run your own classification/);
   assert.match(markup, /Already have an account\? Sign in/);
+  assert.match(markup, /Download memo/);
   assert.match(
     markup,
     /A human-reviewed technical classification workup generated from a publicly available product datasheet\./,

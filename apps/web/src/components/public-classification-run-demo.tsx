@@ -1,11 +1,17 @@
 import React from 'react';
 import type { PublicClassificationRunRecord } from '../lib/types';
+import { buildApiUrl } from '../lib/api-base';
 import { formatDateTime } from '../lib/workspace';
 import { Badge, InlineNotice, Panel } from './ui';
 import { MarkdownRenderer } from './markdown-renderer';
 
 const signUpHref = '/sign-up?next=%2Fapp%2Fonboarding';
 const signInHref = '/sign-in?next=%2Fapp%2Fonboarding';
+
+export const publicDemoCtaLinks = {
+  signUpHref,
+  signInHref,
+};
 
 function confidenceTone(value: string) {
   if (value === 'high') return 'success' as const;
@@ -30,6 +36,21 @@ function DemoCta() {
       </a>
     </div>
   );
+}
+
+function buildMemoFilename(run: PublicClassificationRunRecord) {
+  const baseName = (run.sourceDocumentDisplayName ?? run.document.title ?? run.publicTitle)
+    .replace(/\.[^.]+$/, '')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase();
+
+  return `substrata-eccn-review-${baseName || run.id}.md`;
+}
+
+function buildPublicMemoDownloadHref(runId: string) {
+  return buildApiUrl(`/v1/public/classification-runs/${runId}/memo/download`);
 }
 
 export function PublicClassificationRunDemo({
@@ -63,9 +84,22 @@ export function PublicClassificationRunDemo({
                 <Badge tone="default">{run.status}</Badge>
                 {run.latestReview ? <Badge tone="success">Human-reviewed preview</Badge> : null}
               </div>
-              <h1 className="mt-5 max-w-4xl text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                {run.publicTitle}
-              </h1>
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                  {run.publicTitle}
+                </h1>
+                {run.reviewMemo?.contentMarkdown ? (
+                  <div className="shrink-0">
+                    <a
+                      href={buildPublicMemoDownloadHref(run.id)}
+                      download={buildMemoFilename(run)}
+                      className="inline-flex min-h-10 items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                    >
+                      Download memo
+                    </a>
+                  </div>
+                ) : null}
+              </div>
               <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
                 {run.publicSummary ??
                   'A human-reviewed technical classification workup generated from a publicly available product datasheet.'}

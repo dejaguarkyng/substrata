@@ -105,6 +105,8 @@ type MockResponse = {
   status: (code: number) => MockResponse;
   json: (payload: unknown) => MockResponse;
   set: (headers: Record<string, string>) => MockResponse;
+  setHeader: (name: string, value: string) => MockResponse;
+  send: (payload: unknown) => MockResponse;
 };
 
 function createMockResponse(): MockResponse {
@@ -124,11 +126,19 @@ function createMockResponse(): MockResponse {
       this.headers = { ...this.headers, ...headers };
       return this;
     },
+    setHeader(name, value) {
+      this.headers[name] = value;
+      return this;
+    },
+    send(payload) {
+      this.body = payload;
+      return this;
+    },
   };
 }
 
 async function invokePublicRoute(options: {
-  path: '/classification-runs/:runId' | '/demo';
+  path: '/classification-runs/:runId' | '/classification-runs/:runId/memo/download' | '/demo';
   runId?: string;
   loadPublicDemoRun?: PublicRouterDeps['loadPublicDemoRun'];
   loadActivePublicDemo?: PublicRouterDeps['loadActivePublicDemo'];
@@ -209,6 +219,23 @@ test('public endpoint returns sanitized payload without sensitive fields', async
   assert.doesNotMatch(payloadText, /org_private/);
   assert.doesNotMatch(payloadText, /private@example\.com/);
   assert.doesNotMatch(payloadText, /\/private\/memo\.md/);
+});
+
+test('public memo download endpoint returns markdown attachment for the active demo run', async () => {
+  const response = await invokePublicRoute({
+    path: '/classification-runs/:runId/memo/download',
+    runId: 'cmqj7n97d003vmw10si9skovh',
+    loadPublicDemoRun: async () => createDemoPublication() as never,
+    rateLimit: () => undefined,
+  });
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.headers['Content-Type'], 'text/markdown; charset=utf-8');
+  assert.match(
+    response.headers['Content-Disposition'] ?? '',
+    /attachment; filename="substrata-eccn-review-public-edge-accelerator\.md"/,
+  );
+  assert.equal(response.body, '# Draft memo\n\nPublic demo memo content.');
 });
 
 test('public demo metadata endpoint returns the canonical public URL', async () => {

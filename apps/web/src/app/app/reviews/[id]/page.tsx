@@ -4,6 +4,7 @@ import { DemoPublicationControls } from '../../../../components/demo-publication
 import { MarkdownRenderer } from '../../../../components/markdown-renderer';
 import { ReviewActionForm } from '../../../../components/review-action-form';
 import { Badge, EmptyState, InlineNotice, Panel, StatusBadge } from '../../../../components/ui';
+import { buildApiUrl } from '../../../../lib/api-base';
 import { requireCompletedOnboarding } from '../../../../lib/server-auth';
 import {
   fetchServerDemoPublicationStatus,
@@ -35,6 +36,7 @@ export default async function ReviewDetailPage({
     session.membership?.role === 'OWNER' ||
     session.membership?.role === 'ADMIN' ||
     session.membership?.role === 'REVIEWER';
+  const memoDownloadHref = buildApiUrl(`/v1/classification-runs/${run.id}/memo/download`);
 
   return (
     <AppShell
@@ -179,7 +181,17 @@ export default async function ReviewDetailPage({
               </div>
             ) : null}
 
-            <h2 className="text-lg font-semibold text-slate-950">Classification memo draft</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-slate-950">Classification memo draft</h2>
+              {run.reviewMemo?.contentMarkdown ? (
+                <a
+                  href={memoDownloadHref}
+                  className="inline-flex min-h-10 items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                >
+                  Download memo
+                </a>
+              ) : null}
+            </div>
             {run.reviewMemo?.contentMarkdown ? (
               <div className="mt-4 text-sm leading-7 text-slate-700">
                 <MarkdownRenderer markdown={run.reviewMemo.contentMarkdown} />

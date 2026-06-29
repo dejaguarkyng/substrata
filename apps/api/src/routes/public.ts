@@ -91,6 +91,48 @@ export function createPublicRouter(deps: PublicRouterDeps = {}) {
     return res.json(presentPublicDemoRun(run));
   });
 
+  router.get('/classification-runs/:runId/memo/download', async (req, res) => {
+    try {
+      rateLimit({
+        key: `public-demo-memo:${getClientIp(req)}:${String(req.params.runId)}`,
+        limit: 60,
+        windowMs: 60 * 1000,
+      });
+    } catch (error) {
+      throw new HttpError(
+        429,
+        error instanceof Error ? error.message : 'Too many requests. Try again later.',
+      );
+    }
+
+    const publication = await loadPublicDemoRun(String(req.params.runId));
+
+    if (!publication?.activeClassificationRun?.reviewMemo?.contentMarkdown) {
+      return res.status(404).json({
+        error: 'NotFound',
+        message: 'Public classification memo not found.',
+      });
+    }
+
+    const run = publication.activeClassificationRun;
+    const baseName = (publication.sourceDocumentDisplayName ?? run.document.title)
+      .replace(/\.[^.]+$/, '')
+      .replace(/[^a-zA-Z0-9._-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase();
+    const safeTitle = baseName || run.id;
+
+    res.set(setPublicCacheHeaders());
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="substrata-eccn-review-${safeTitle}.md"`,
+    );
+
+    return res.send(run.reviewMemo.contentMarkdown);
+  });
+
   return router;
 }
 
