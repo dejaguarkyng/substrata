@@ -83,28 +83,7 @@ export function AppShell({
               })}
             </nav>
             <div className="border-t border-slate-200 px-4 py-4">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <p className="truncate text-sm font-semibold text-slate-950">{session.user?.name}</p>
-                <p className="mt-1 truncate text-xs text-slate-500">{session.user?.email}</p>
-                <p className="mt-1 truncate text-xs uppercase tracking-[0.14em] text-slate-500">
-                  {session.organization?.name}
-                </p>
-                <div className="mt-4 grid gap-2">
-                  <Link
-                    href="/app/profile"
-                    className="rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-white"
-                  >
-                    Profile
-                  </Link>
-                  <Link
-                    href="/app/settings"
-                    className="rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-white"
-                  >
-                    Workspace Settings
-                  </Link>
-                  <SignOutButton fullWidth />
-                </div>
-              </div>
+              <SignOutButton fullWidth />
             </div>
           </aside>
 
@@ -127,8 +106,8 @@ export function AppShell({
                   <AppShellNav currentPath={currentPath} navItems={navItems} session={session} />
                 </div>
 
-                <div className="mt-4 flex flex-col gap-4 lg:mt-0 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="min-w-0">
+                <div className="mt-4 flex flex-col gap-4 lg:mt-0 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                       {session.organization?.name}
                     </p>
@@ -139,7 +118,18 @@ export function AppShell({
                       <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{description}</p>
                     ) : null}
                   </div>
-                  {actions ? <div className="shrink-0">{actions}</div> : null}
+                  <div className="flex shrink-0 flex-col items-stretch gap-3 lg:items-end">
+                    <div className="hidden min-w-[18rem] rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 lg:block">
+                      <p className="truncate text-sm font-semibold text-slate-950">
+                        {session.user?.name}
+                      </p>
+                      <p className="mt-1 truncate text-xs text-slate-500">{session.user?.email}</p>
+                      <p className="mt-1 truncate text-xs uppercase tracking-[0.14em] text-slate-500">
+                        {session.organization?.name}
+                      </p>
+                    </div>
+                    {actions ? <div>{actions}</div> : null}
+                  </div>
                 </div>
               </div>
             </header>

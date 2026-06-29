@@ -54,8 +54,8 @@ export default async function ReviewDetailPage({
         </div>
       }
     >
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className="space-y-6">
+      <div className="grid gap-6 xl:h-[calc(100vh-13rem)] xl:grid-cols-[0.95fr_1.05fr]">
+        <div className="space-y-6 xl:min-h-0 xl:overflow-y-auto xl:pr-2">
           <Panel>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -166,7 +166,7 @@ export default async function ReviewDetailPage({
             )}
           </Panel>
         </div>
-        <div className="space-y-6">
+        <div className="space-y-6 xl:min-h-0 xl:overflow-y-auto xl:pl-2">
           <Panel>
             {demoStatus ? (
               <div className="mb-6">

@@ -107,22 +107,6 @@ export function AppShellNav({
                 </p>
                 <p className="mt-1 truncate text-xs text-slate-500">{session.user?.email}</p>
               </div>
-              <div className="mb-3 grid gap-2">
-                <Link
-                  href="/app/profile"
-                  onClick={() => setOpen(false)}
-                  className="rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100"
-                >
-                  Profile
-                </Link>
-                <Link
-                  href="/app/settings"
-                  onClick={() => setOpen(false)}
-                  className="rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100"
-                >
-                  Workspace Settings
-                </Link>
-              </div>
               <SignOutButton fullWidth onComplete={() => setOpen(false)} />
             </div>
           </div>
