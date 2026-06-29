@@ -16,7 +16,7 @@ import {
 import { getSafeReturnPath } from '../lib/paths';
 import { InlineNotice } from './ui';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
+// const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
 
 function emailError(email: string) {
   if (!email) return 'Enter your work email.';
