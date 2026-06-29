@@ -106,26 +106,26 @@ function PasswordField(props: Omit<React.ComponentProps<typeof Field>, 'type' | 
   );
 }
 
-function GoogleButton() {
-  return (
-    <a
-      href={`${API_BASE}/v1/auth/google/start`}
-      className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-    >
-      Continue with Google
-    </a>
-  );
-}
+// function GoogleButton() {
+//   return (
+//     <a
+//       href={`${API_BASE}/v1/auth/google/start`}
+//       className="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+//     >
+//       Continue with Google
+//     </a>
+//   );
+// }
 
-function AuthDivider() {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="h-px flex-1 bg-slate-200" />
-      <span className="text-xs uppercase tracking-[0.18em] text-slate-400">or sign in with email</span>
-      <div className="h-px flex-1 bg-slate-200" />
-    </div>
-  );
-}
+// function AuthDivider() {
+//   return (
+//     <div className="flex items-center gap-3">
+//       <div className="h-px flex-1 bg-slate-200" />
+//       <span className="text-xs uppercase tracking-[0.18em] text-slate-400">or sign in with email</span>
+//       <div className="h-px flex-1 bg-slate-200" />
+//     </div>
+//   );
+// }
 
 export function SignInForm() {
   const router = useRouter();
@@ -181,8 +181,8 @@ export function SignInForm() {
         }
       }}
     >
-      <GoogleButton />
-      <AuthDivider />
+      {/* <GoogleButton />
+      // <AuthDivider /> */}
       <Field
         label="Work email"
         type="email"
@@ -289,8 +289,8 @@ export function SignUpForm() {
         }
       }}
     >
-      <GoogleButton />
-      <AuthDivider />
+      {/* <GoogleButton /> */}
+      {/* <AuthDivider /> */}
       <Field
         label="Full name"
         value={name}
