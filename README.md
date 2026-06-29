@@ -60,6 +60,9 @@ Substrata is an ECCN review assistant for semiconductor and advanced hardware te
 
 ## Environment Variables
 
+- Local development uses `.env`.
+- Docker Compose production uses `infra/.env.production`. Start from `infra/.env.production.example` on the VPS.
+
 - `APP_URL`: browser-facing web origin, used for verification, reset, and invite links.
 - `API_URL`: browser-facing API origin.
 - In Docker Compose production, `DATABASE_URL` must use the Compose service hostname `postgres`, not `localhost` or `127.0.0.1`. Example: `postgresql://USER:PASSWORD@postgres:5432/substrata?schema=public`
