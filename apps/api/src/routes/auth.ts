@@ -1,16 +1,16 @@
 import crypto from 'node:crypto';
 import { parse } from 'cookie';
 import { Router, type Request } from 'express';
+
 import {
   changePasswordSchema,
   forgotPasswordSchema,
   profileUpdateSchema,
-  resendVerificationSchema,
   resetPasswordSchema,
   signInSchema,
   signUpSchema,
-  verifyEmailSchema,
 } from '@substrata/shared';
+
 import { env } from '../config/env';
 import {
   clearOAuthCookies,
@@ -26,9 +26,11 @@ import { HttpError } from '../lib/errors';
 import { parseBody } from '../lib/http';
 import { generateOpaqueToken, hashOpaqueToken } from '../lib/security';
 import { requireAuth, requireCsrf } from '../middleware/auth';
+
 import {
   acceptWorkspaceInvite,
   changePassword,
+  createSessionForUser,
   getAuthMe,
   requestPasswordReset,
   revokeAllUserSessions,
@@ -40,6 +42,7 @@ import {
   updateProfile,
   resetPassword,
 } from '../services/auth.service';
+
 import { assertRateLimit } from '../services/rate-limit.service';
 
 export const authRouter = Router();
@@ -171,21 +174,40 @@ authRouter.get('/me', async (req, res) => {
   });
 });
 
+
 authRouter.post('/sign-up', requireCsrf, async (req, res) => {
   const input = parseBody(signUpSchema, req);
   const ipAddress = getClientIp(req);
+
   assertRateLimit({
     key: `sign-up:${ipAddress}:${input.email.toLowerCase()}`,
     limit: 5,
     windowMs: 10 * 60 * 1000,
   });
 
-  await signUpWithPassword(input);
+  const result = await signUpWithPassword(input);
+
+  const session = await createSessionForUser({
+    userId: result.user.id,
+    organizationId: result.organization.id,
+    actor: {
+      ipAddress,
+      userAgent: req.get('user-agent'),
+    },
+  });
+
+  setSessionCookies({
+    res,
+    sessionToken: session.rawSessionToken,
+    csrfToken: session.rawCsrfToken,
+  });
+
   res.status(201).json({
     ok: true,
-    message: 'Check your email for a verification link.',
+    next: '/app/onboarding',
   });
 });
+
 
 authRouter.post('/sign-in', requireCsrf, async (req, res) => {
   const input = parseBody(signInSchema, req);
@@ -231,41 +253,41 @@ authRouter.post('/sign-out', requireCsrf, requireAuth, async (req, res) => {
   res.status(204).send();
 });
 
-authRouter.post('/verify-email', requireCsrf, async (req, res) => {
-  const input = parseBody(verifyEmailSchema, req);
-  const result = await verifyEmailToken({
-    token: input.token,
-    actor: {
-      ipAddress: getClientIp(req),
-      userAgent: req.get('user-agent'),
-    },
-  });
+// authRouter.post('/verify-email', requireCsrf, async (req, res) => {
+//   const input = parseBody(verifyEmailSchema, req);
+//   const result = await verifyEmailToken({
+//     token: input.token,
+//     actor: {
+//       ipAddress: getClientIp(req),
+//       userAgent: req.get('user-agent'),
+//     },
+//   });
 
-  setSessionCookies({
-    res,
-    sessionToken: result.session.rawSessionToken,
-    csrfToken: result.session.rawCsrfToken,
-  });
+//   setSessionCookies({
+//     res,
+//     sessionToken: result.session.rawSessionToken,
+//     csrfToken: result.session.rawCsrfToken,
+//   });
 
-  res.json({
-    ok: true,
-    next: result.user.onboardingCompletedAt ? '/app' : '/app/onboarding',
-  });
-});
+//   res.json({
+//     ok: true,
+//     next: result.user.onboardingCompletedAt ? '/app' : '/app/onboarding',
+//   });
+// });
 
-authRouter.post('/resend-verification', requireCsrf, async (req, res) => {
-  const input = parseBody(resendVerificationSchema, req);
-  assertRateLimit({
-    key: `resend-verification:${getClientIp(req)}:${input.email.toLowerCase()}`,
-    limit: 5,
-    windowMs: 10 * 60 * 1000,
-  });
-  await resendVerificationEmail(input.email);
-  res.json({
-    ok: true,
-    message: 'If that email can receive verification mail, a new link has been sent.',
-  });
-});
+// authRouter.post('/resend-verification', requireCsrf, async (req, res) => {
+//   const input = parseBody(resendVerificationSchema, req);
+//   assertRateLimit({
+//     key: `resend-verification:${getClientIp(req)}:${input.email.toLowerCase()}`,
+//     limit: 5,
+//     windowMs: 10 * 60 * 1000,
+//   });
+//   await resendVerificationEmail(input.email);
+//   res.json({
+//     ok: true,
+//     message: 'If that email can receive verification mail, a new link has been sent.',
+//   });
+// });
 
 authRouter.post('/forgot-password', requireCsrf, async (req, res) => {
   const input = parseBody(forgotPasswordSchema, req);
