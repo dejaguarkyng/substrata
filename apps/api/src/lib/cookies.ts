@@ -11,6 +11,7 @@ function cookieOptions(httpOnly: boolean, maxAgeSeconds?: number) {
     httpOnly,
     sameSite: 'lax' as const,
     secure: env.isProduction,
+    domain: env.isProduction ? '.junglegrid.dev' : undefined,
     path: '/',
     ...(maxAgeSeconds ? { maxAge: maxAgeSeconds } : {}),
   };
