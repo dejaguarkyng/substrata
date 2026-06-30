@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import sys
 from dataclasses import asdict
 from datetime import UTC, datetime
@@ -611,9 +610,15 @@ def _fact_issues(specs: list[ExtractedSpec], extraction: AIExtractionResult | No
 
 def _specific_eccn_candidates(candidates: list[Any], specs: list[ExtractedSpec]) -> list[Any]:
     specific: list[Any] = []
+    seen_candidate_keys: set[str] = set()
     for candidate in candidates:
-        if not re.match(r"^[0-9][A-Z][0-9]{3}[A-Za-z0-9]*$", candidate.eccn):
+        candidate_key = candidate.review_path_id or f"{candidate.eccn}:{candidate.title}"
+        if candidate_key in seen_candidate_keys:
             continue
+        seen_candidate_keys.add(candidate_key)
+        # Preserve canonical review-path candidates in the final output so a
+        # generic 3A991 fallback cannot become the only serialized candidate
+        # for profile-specific flows such as MCU/processor/SoC review.
         regulation_source = _regulation_source_from_citation(
             candidate.eccn,
             candidate.regulatory_citations[0] if candidate.regulatory_citations else None,
