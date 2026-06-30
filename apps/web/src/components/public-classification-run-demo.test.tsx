@@ -8,6 +8,8 @@ import type { PublicClassificationRunRecord } from '../lib/types';
 const demoRun: PublicClassificationRunRecord = {
   id: 'cmqj7n97d003vmw10si9skovh',
   status: 'completed',
+  workflowState: 'reviewer_conclusion_recorded',
+  workflowLabel: 'Human-reviewed',
   confidence: 0.64,
   uncertaintyFlags: ['multiple_plausible_eccns'],
   requiresHumanReview: true,
@@ -19,6 +21,7 @@ const demoRun: PublicClassificationRunRecord = {
   publishedAt: '2026-06-20T08:15:00.000Z',
   createdAt: '2026-06-20T08:00:00.000Z',
   completedAt: '2026-06-20T08:05:00.000Z',
+  demoBanner: 'Demo using publicly available technical documentation. Example technical workup, not a customer conclusion.',
   document: {
     title: 'Public edge accelerator datasheet',
     mimeType: 'application/pdf',
@@ -29,21 +32,32 @@ const demoRun: PublicClassificationRunRecord = {
   extractedSpecs: [
     {
       id: 'spec_1',
-      name: 'process_node',
+      canonicalFieldName: 'process_node',
+      label: 'Process node',
       value: '7',
       unit: 'nm',
       sourceSnippet: 'Manufactured on a 7 nm process node.',
+      sourceText: 'Manufactured on a 7 nm process node.',
       importance: 'process threshold review',
       category: 'semiconductor_process',
       confidence: 'medium',
+      valueType: 'directly_stated',
+      reviewerStatus: 'unreviewed',
     },
   ],
+  factIssues: [],
+  reviewPaths: [],
   eccnCandidates: [
     {
       id: 'cand_1',
       eccn: '3A001',
       title: 'Specified electronic items and components',
+      officialTitle: 'Specified electronic items and components',
+      status: 'review_required',
       confidence: 'medium',
+      confidenceRationale: 'Specific ECCN comparison is supported, but the threshold mapping remains open.',
+      controlCriteria: ['Category 3 electronics threshold comparison'],
+      factMappings: [],
       matchedTechnicalFacts: ['process_node: 7 nm'],
       regulatoryCitations: [
         {
@@ -55,9 +69,13 @@ const demoRun: PublicClassificationRunRecord = {
       ],
       whyItMayApply: 'The semiconductor performance facts support a Category 3 review.',
       whyItMayNotApply: 'The exact control threshold still needs reviewer mapping.',
+      mayApplyReasons: ['Process-node evidence'],
+      mayNotApplyReasons: ['Threshold mapping not yet confirmed'],
       missingInformation: ['Precise threshold mapping'],
       uncertaintyFlags: ['multiple_plausible_eccns'],
       reviewerQuestions: ['Which exact control-text threshold is the closest fit?'],
+      alternativeCandidates: [],
+      isSpecificEccn: true,
     },
   ],
   reviewMemo: {
@@ -65,7 +83,9 @@ const demoRun: PublicClassificationRunRecord = {
   },
   latestReview: {
     status: 'reviewed',
+    workflowState: 'reviewer_conclusion_recorded',
     notes: 'Engineering thresholds should be confirmed before internal adoption.',
+    conclusionRecordedAt: '2026-06-20T08:10:00.000Z',
     reviewedAt: '2026-06-20T08:10:00.000Z',
   },
 };

@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { getLocalStorageRoot, repoRoot } from '../lib/paths';
 import { HttpError } from '../lib/errors';
 
@@ -32,6 +32,7 @@ export async function persistUploadedDocument(input: {
     fileName: input.file.originalname,
     mimeType: input.file.mimetype || 'application/octet-stream',
     sizeBytes: input.file.size,
+    sha256: createHash('sha256').update(input.file.buffer).digest('hex'),
   };
 }
 
@@ -51,6 +52,13 @@ export async function loadBundledSampleDatasheet() {
     mimeType: 'text/plain',
     sizeBytes: Buffer.byteLength(rawText, 'utf8'),
     storagePath: relativePath,
+    documentType: 'Public technical datasheet',
+    manufacturer: 'Asteria Microsystems',
+    sourceUrl: 'https://example.com/public-demo/asteria-a112-datasheet',
+    versionLabel: 'Rev. 2.3',
+    extractionStatus: 'completed' as const,
+    origin: 'public' as const,
+    visibility: 'organization' as const,
     rawText,
     sourceType: 'seed' as const,
   };

@@ -22,7 +22,7 @@ export default async function AppOverviewPage() {
       session={session}
       currentPath="/app"
       title="Workspace overview"
-      description="Track review-ready analysis, recent uploads, and the human review queue from one operational surface."
+      description="Track review-ready technical workups, review bottlenecks, reviewer actions, and recent audit activity from one operational surface."
       actions={
         <Link
           href="/app/documents/new"
@@ -35,7 +35,7 @@ export default async function AppOverviewPage() {
       {documents.length === 0 ? (
         <EmptyState
           title="Start your first classification review"
-          body="Upload a technical document, extract technical facts, generate recommended ECCN review paths, and prepare a human-review-ready memo draft."
+          body="Upload a technical document, extract source-backed technical facts, generate evidence-backed review paths, and prepare a reviewer-safe draft memo."
           action={<ActionLink href="/app/documents/new">Create first classification</ActionLink>}
         />
       ) : (
@@ -66,10 +66,10 @@ export default async function AppOverviewPage() {
                       <div className="min-w-0">
                         <p className="truncate font-medium text-slate-950">{run.document.title}</p>
                         <p className="mt-1 text-sm text-slate-500">
-                          {run.eccnCandidates.length} recommended review paths / {run.uncertaintyFlags.length} uncertainty flags
+                          {run.reviewPaths.length} review paths / {run.uncertaintyFlags.length} uncertainty flags
                         </p>
                       </div>
-                      <StatusBadge status={run.humanReviews[0]?.status} />
+                      <StatusBadge status={run.humanReviewStatus} />
                     </div>
                   </Link>
                 ))}

@@ -14,7 +14,7 @@ export default async function ReviewsPage() {
       session={session}
       currentPath="/app/reviews"
       title="Classification reviews"
-      description="Browse organization-scoped review runs, memo status, reviewer state, and source-document context."
+      description="Browse organization-scoped technical workups, review-path packages, memo status, reviewer state, and source-document context."
     >
       {runs.length === 0 ? (
         <EmptyState
@@ -32,9 +32,9 @@ export default async function ReviewsPage() {
                     <Link href={`/app/reviews/${run.id}`} className="block truncate font-medium text-slate-950">
                       {run.document.title}
                     </Link>
-                    <p className="mt-1 text-xs text-slate-500">{run.eccnCandidates.length} recommended review paths</p>
+                    <p className="mt-1 text-xs text-slate-500">{run.reviewPaths.length} review paths / {run.eccnCandidates.length} potential ECCN candidates</p>
                   </div>
-                  <StatusBadge status={run.humanReviews[0]?.status} />
+                  <StatusBadge status={run.humanReviewStatus} />
                 </div>
                 <dl className="mt-4 grid gap-3 text-sm">
                   <div>
@@ -80,7 +80,7 @@ export default async function ReviewsPage() {
                         {run.uncertaintyFlags.length > 0 ? `${run.uncertaintyFlags.length} flags` : 'No open flags'}
                       </td>
                       <td className="px-4 py-4">
-                        <StatusBadge status={run.humanReviews[0]?.status} />
+                        <StatusBadge status={run.humanReviewStatus} />
                       </td>
                       <td className="px-4 py-4 text-slate-600">{formatDateTime(run.completedAt ?? run.createdAt)}</td>
                     </tr>

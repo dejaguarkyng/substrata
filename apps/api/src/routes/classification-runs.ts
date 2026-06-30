@@ -1,9 +1,16 @@
 import fs from 'node:fs/promises';
 import { Router } from 'express';
-import { publicDemoPublishSchema, reviewSubmissionSchema } from '@substrata/shared';
+import {
+  eccnCandidateUpdateSchema,
+  factReviewUpdateSchema,
+  publicDemoPublishSchema,
+  reviewPathUpdateSchema,
+  reviewSubmissionSchema,
+} from '@substrata/shared';
 import { canManagePublicDemo, canSubmitReview } from '../lib/authz';
 import { parseBody } from '../lib/http';
 import {
+  claimClassificationRun,
   getClassificationRun,
   getClassificationRunDemoPublicationStatus,
   listClassificationRuns,
@@ -12,6 +19,9 @@ import {
   publishClassificationRunAsPublicDemo,
   submitClassificationReview,
   unpublishClassificationRunAsPublicDemo,
+  updateECCNCandidateRecord,
+  updateExtractedFactReview,
+  updateReviewPathRecord,
 } from '../services/classification.service';
 import { presentRun } from '../services/presenters';
 
@@ -21,6 +31,10 @@ type ClassificationRunsRouterDeps = {
   listQueue?: typeof listReviewQueue;
   listMemosForOrg?: typeof listReviewMemos;
   submitReviewRecord?: typeof submitClassificationReview;
+  claimRun?: typeof claimClassificationRun;
+  updateFactReview?: typeof updateExtractedFactReview;
+  updateReviewPath?: typeof updateReviewPathRecord;
+  updateCandidate?: typeof updateECCNCandidateRecord;
   publishDemo?: typeof publishClassificationRunAsPublicDemo;
   unpublishDemo?: typeof unpublishClassificationRunAsPublicDemo;
   getDemoStatus?: typeof getClassificationRunDemoPublicationStatus;
@@ -35,6 +49,10 @@ export function createClassificationRunsRouter(
   const listQueue = deps.listQueue ?? listReviewQueue;
   const listMemosForOrg = deps.listMemosForOrg ?? listReviewMemos;
   const submitReviewRecord = deps.submitReviewRecord ?? submitClassificationReview;
+  const claimRun = deps.claimRun ?? claimClassificationRun;
+  const updateFactReview = deps.updateFactReview ?? updateExtractedFactReview;
+  const updateReviewPath = deps.updateReviewPath ?? updateReviewPathRecord;
+  const updateCandidate = deps.updateCandidate ?? updateECCNCandidateRecord;
   const publishDemo = deps.publishDemo ?? publishClassificationRunAsPublicDemo;
   const unpublishDemo = deps.unpublishDemo ?? unpublishClassificationRunAsPublicDemo;
   const getDemoStatus = deps.getDemoStatus ?? getClassificationRunDemoPublicationStatus;
@@ -66,6 +84,9 @@ export function createClassificationRunsRouter(
         documentTitle: memo.classificationRun.document.title,
         documentFileName: memo.classificationRun.document.fileName,
         generatedBy: memo.generatedBy,
+        versionNumber: memo.versionNumber,
+        reviewStateSnapshot: memo.reviewStateSnapshot,
+        reviewerStatusSnapshot: memo.reviewerStatusSnapshot,
         updatedAt: memo.updatedAt,
         humanReviewStatus:
           memo.classificationRun.humanReviews[0]?.status ?? 'pending_review',
@@ -172,11 +193,14 @@ export function createClassificationRunsRouter(
       classificationRunId: run.id,
       documentId: run.documentId,
       status: run.status,
+      workflowState: run.workflowState,
       requiresHumanReview: run.requiresHumanReview,
       humanReviewStatus: run.humanReviews[0]?.status ?? 'pending_review',
       contentMarkdown: run.reviewMemo.contentMarkdown,
       reviewerNote: run.humanReviews[0]?.notes ?? null,
-      disclaimer: 'Draft for expert review only.',
+      disclaimer:
+        run.reviewMemo.disclaimer ??
+        'Draft review memo. Classification support, not legal advice. Requires qualified reviewer confirmation.',
       summary: presentedRun.document.summary,
     });
   });
@@ -223,10 +247,113 @@ export function createClassificationRunsRouter(
       organizationId: organization.id,
       reviewerId: user.id,
       status: input.status,
+      workflowState: input.workflowState,
       note: input.note ?? '',
+      approvalScope: input.approvalScope,
+      finalInternalRecommendation: input.finalInternalRecommendation,
+      caveats: input.caveats,
+      assumptions: input.assumptions,
+      missingInformation: input.missingInformation,
     });
 
     return res.status(201).json(review);
+  });
+
+  classificationRunsRouter.post('/:id/claim', async (req, res) => {
+    const { organization, membership, user } = req.authContext!;
+
+    if (!canSubmitReview(membership.role)) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You do not have access to claim a review.',
+      });
+    }
+
+    const run = await claimRun({
+      classificationRunId: req.params.id,
+      organizationId: organization.id,
+      reviewerId: user.id,
+    });
+
+    return res.status(200).json(run ? presentRun(run) : null);
+  });
+
+  classificationRunsRouter.patch('/:id/facts/:factId', async (req, res) => {
+    const input = parseBody(factReviewUpdateSchema, req);
+    const { organization, membership, user } = req.authContext!;
+
+    if (!canSubmitReview(membership.role)) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You do not have access to review extracted facts.',
+      });
+    }
+
+    const fact = await updateFactReview({
+      classificationRunId: req.params.id,
+      organizationId: organization.id,
+      reviewerId: user.id,
+      factId: req.params.factId,
+      reviewerStatus: input.reviewerStatus,
+      reviewerNote: input.reviewerNote,
+      reviewerCorrectedValue: input.reviewerCorrectedValue,
+      reviewerCorrectedUnit: input.reviewerCorrectedUnit,
+      suppressFromMemo: input.suppressFromMemo,
+    });
+
+    return res.status(200).json(fact);
+  });
+
+  classificationRunsRouter.patch('/:id/review-paths/:reviewPathId', async (req, res) => {
+    const input = parseBody(reviewPathUpdateSchema, req);
+    const { organization, membership, user } = req.authContext!;
+
+    if (!canSubmitReview(membership.role)) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You do not have access to update review paths.',
+      });
+    }
+
+    const reviewPath = await updateReviewPath({
+      classificationRunId: req.params.id,
+      organizationId: organization.id,
+      reviewerId: user.id,
+      reviewPathId: req.params.reviewPathId,
+      status: input.status,
+      reviewerNotes: input.reviewerNotes,
+      decisionRationale: input.decisionRationale,
+      missingInformation: input.missingInformation ?? [],
+      reviewerQuestions: input.reviewerQuestions ?? [],
+    });
+
+    return res.status(200).json(reviewPath);
+  });
+
+  classificationRunsRouter.patch('/:id/eccn-candidates/:candidateId', async (req, res) => {
+    const input = parseBody(eccnCandidateUpdateSchema, req);
+    const { organization, membership, user } = req.authContext!;
+
+    if (!canSubmitReview(membership.role)) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You do not have access to update ECCN candidates.',
+      });
+    }
+
+    const candidate = await updateCandidate({
+      classificationRunId: req.params.id,
+      organizationId: organization.id,
+      reviewerId: user.id,
+      candidateId: req.params.candidateId,
+      status: input.status,
+      reviewerDisposition: input.reviewerDisposition,
+      reviewerDispositionRationale: input.reviewerDispositionRationale,
+      confidenceRationale: input.confidenceRationale,
+      alternativeCandidates: input.alternativeCandidates ?? [],
+    });
+
+    return res.status(200).json(candidate);
   });
 
   classificationRunsRouter.get('/:id/artifacts', async (req, res) => {

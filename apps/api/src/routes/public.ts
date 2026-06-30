@@ -130,7 +130,7 @@ export function createPublicRouter(deps: PublicRouterDeps = {}) {
       `attachment; filename="substrata-eccn-review-${safeTitle}.md"`,
     );
 
-    return res.send(run.reviewMemo.contentMarkdown);
+    return res.send(run.reviewMemo?.contentMarkdown ?? '');
   });
 
   return router;

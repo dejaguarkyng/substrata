@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from dataclasses import asdict
 from datetime import UTC, datetime
@@ -20,7 +21,16 @@ from prompts import (
     build_extraction_prompt,
     build_memo_prompt,
 )
-from schemas import AIExtractionResult, ExtractedSpec, WorkerOutput, validate_ai_extraction_payload
+from schemas import (
+    AIExtractionResult,
+    CandidateFactMapping,
+    ExtractedSpec,
+    FactIssue,
+    RegulationSource,
+    ReviewPath,
+    WorkerOutput,
+    validate_ai_extraction_payload,
+)
 from validation import validate_memo_markdown, validate_worker_output
 
 
@@ -501,6 +511,132 @@ def _profile_artifact_payload(specs: list[ExtractedSpec], extraction: AIExtracti
     }
 
 
+def _iso_now() -> str:
+    return datetime.now(UTC).replace(microsecond=0).isoformat()
+
+
+def _regulation_source_from_citation(candidate_eccn: str, citation: Any | None) -> RegulationSource:
+    label = getattr(citation, "citation_label", f"{candidate_eccn} regulation source")
+    text = getattr(citation, "citation_text", "Primary regulation text should be verified by a qualified reviewer.")
+    source = getattr(citation, "source", candidate_eccn)
+    return RegulationSource(
+        authority="BIS / eCFR",
+        regulation_title=label,
+        regulation_version="retrieved current",
+        citation_text=text,
+        citation_url="https://www.ecfr.gov/current/title-15/subtitle-B/chapter-VII/subchapter-C/part-774",
+        source_identifier=source,
+        section=source,
+        paragraph=None,
+        kind="primary_regulation",
+        last_verified_at=_iso_now(),
+        verification_status="needs_verification",
+    )
+
+
+def _candidate_fact_mapping(specs: list[ExtractedSpec], matched_facts: list[str]) -> list[CandidateFactMapping]:
+    mappings: list[CandidateFactMapping] = []
+    for fact in matched_facts[:8]:
+        fact_name = fact.split(":", 1)[0].strip().lower().replace(" ", "_")
+        spec = next((item for item in specs if item.name == fact_name), None)
+        if not spec:
+            continue
+        mappings.append(
+            CandidateFactMapping(
+                fact_name=spec.name,
+                criterion_label=spec.display_name or spec.name.replace("_", " ").title(),
+                matched_value=f"{spec.value}{f' {spec.unit}' if spec.unit else ''}",
+                comparison_result="Source-backed technical fact warrants reviewer comparison.",
+            )
+        )
+    return mappings
+
+
+def _review_paths_from_candidates(candidates: list[Any], specs: list[ExtractedSpec]) -> list[ReviewPath]:
+    paths: list[ReviewPath] = []
+    for index, candidate in enumerate(candidates):
+        path_type = "encryption_security" if "5 Part 2" in candidate.title or "crypto" in candidate.title.lower() else "product_area"
+        fact_names = [
+            spec.name
+            for spec in specs
+            if any(spec.name in fact.lower().replace(" ", "_") for fact in candidate.matched_technical_facts)
+        ][:8]
+        if not fact_names:
+            fact_names = [spec.name for spec in specs[:4]]
+        paths.append(
+            ReviewPath(
+                path_key=candidate.review_path_key or candidate.review_path_id or f"review_path_{index + 1}",
+                title=candidate.title,
+                scope=f"Assess whether the extracted technical evidence supports the {candidate.title.lower()} path.",
+                type=path_type,
+                status="open",
+                why_triggered=candidate.why_it_may_apply,
+                technical_risk_area="Cryptography and hardware security" if path_type == "encryption_security" else "Processor architecture and performance",
+                triggered_fact_names=fact_names,
+                regulatory_citations=candidate.regulatory_citations,
+                missing_information=candidate.missing_information,
+                reviewer_questions=candidate.reviewer_questions,
+            )
+        )
+    return paths
+
+
+def _fact_issues(specs: list[ExtractedSpec], extraction: AIExtractionResult | None) -> list[FactIssue]:
+    issues: list[FactIssue] = []
+    if extraction and extraction.product_identity.is_family_overview:
+        issues.append(
+            FactIssue(
+                issue_type="family_scope_warning",
+                summary="Family-level source detected",
+                details="The source appears to describe a product family rather than a single verified ordering code. Device-specific ordering codes and configuration details may still be required.",
+                primary_fact_name="is_family_overview",
+            )
+        )
+    seen: dict[tuple[str, str], ExtractedSpec] = {}
+    for spec in specs:
+        key = (spec.name, spec.value)
+        if key in seen:
+            issues.append(
+                FactIssue(
+                    issue_type="duplicate",
+                    summary=f"Duplicate fact detected for {spec.display_name or spec.name}",
+                    details="The same fact value appeared more than once in the extracted source-backed technical facts.",
+                    primary_fact_name=spec.name,
+                    related_fact_name=seen[key].name,
+                )
+            )
+        seen[key] = spec
+    return issues
+
+
+def _specific_eccn_candidates(candidates: list[Any], specs: list[ExtractedSpec]) -> list[Any]:
+    specific: list[Any] = []
+    for candidate in candidates:
+        if not re.match(r"^[0-9][A-Z][0-9]{3}[A-Za-z0-9]*$", candidate.eccn):
+            continue
+        regulation_source = _regulation_source_from_citation(
+            candidate.eccn,
+            candidate.regulatory_citations[0] if candidate.regulatory_citations else None,
+        )
+        candidate.official_title = candidate.title
+        candidate.confidence_rationale = (
+            "Confidence reflects evidence completeness, missing technical thresholds, and source specificity rather than generic model confidence."
+        )
+        candidate.status = "review_required"
+        candidate.regulation_source = regulation_source
+        candidate.paragraph_reference = regulation_source.section
+        candidate.control_criteria = [
+            "Specific ECCN comparison requires current regulation text and source-backed technical thresholds."
+        ]
+        candidate.fact_mappings = _candidate_fact_mapping(specs, candidate.matched_technical_facts)
+        candidate.may_apply_reasons = [candidate.why_it_may_apply]
+        candidate.may_not_apply_reasons = [candidate.why_it_may_not_apply]
+        candidate.alternative_candidates = []
+        candidate.review_path_key = candidate.review_path_id or None
+        specific.append(candidate)
+    return specific
+
+
 def run(payload_path: str) -> WorkerOutput:
     worker_input = load_input(payload_path)
     text = extract_text(worker_input.file_path)
@@ -584,20 +720,30 @@ def run(payload_path: str) -> WorkerOutput:
     facts_path = artifacts_dir / f"{worker_input.document_id}-extracted-facts.json"
     review_paths_path = artifacts_dir / f"{worker_input.document_id}-review-paths.json"
 
+    review_paths = _review_paths_from_candidates(candidates, specs)
+    fact_issues = _fact_issues(specs, extraction)
+    specific_candidates = _specific_eccn_candidates(candidates, specs)
+    confidence_rationale = (
+        "Confidence reflects source specificity, missing threshold data, unresolved reviewer questions, and whether the current document appears family-level rather than ordering-code-specific."
+    )
+
     extracted_text_path.write_text(text)
     memo_path.write_text(memo_markdown)
     profile_path.write_text(json.dumps(_profile_artifact_payload(specs, extraction), indent=2))
     facts_path.write_text(json.dumps([asdict(spec) for spec in specs], indent=2))
-    review_paths_path.write_text(json.dumps([asdict(candidate) for candidate in candidates], indent=2))
+    review_paths_path.write_text(json.dumps([asdict(path) for path in review_paths], indent=2))
 
     output = WorkerOutput(
         document_id=worker_input.document_id,
         organization_id=worker_input.organization_id,
         requires_human_review=True,
         confidence=confidence,
+        confidence_rationale=confidence_rationale,
         uncertainty_flags=uncertainty_flags,
         extracted_specs=specs,
-        eccn_candidates=candidates,
+        fact_issues=fact_issues,
+        review_paths=review_paths,
+        eccn_candidates=specific_candidates,
         memo_markdown=memo_markdown,
         artifacts={
             "extracted_text_path": str(extracted_text_path),
@@ -620,7 +766,7 @@ def run(payload_path: str) -> WorkerOutput:
         document_id=worker_input.document_id,
         classification_mode=run_metadata.get("classificationMode"),
         extracted_spec_count=len(specs),
-        candidate_count=len(candidates),
+        candidate_count=len(specific_candidates),
         memo_characters=len(memo_markdown),
     )
 

@@ -13,6 +13,47 @@ enum DocumentSourceType {
   manual
 }
 
+enum DocumentOrigin {
+  public
+  customer_provided
+  internal
+}
+
+enum DocumentVisibility {
+  private
+  organization
+  public_demo
+}
+
+enum ExtractionStatus {
+  pending
+  completed
+  failed
+}
+
+enum FactValueType {
+  directly_stated
+  inferred
+  normalized
+  calculated
+}
+
+enum FactVerificationStatus {
+  unreviewed
+  verified
+  corrected
+  rejected
+  suppressed
+}
+
+enum FactIssueType {
+  contradiction
+  duplicate
+  family_scope_warning
+  unverified_identifier
+  ambiguous_unit
+}
+
 enum ClassificationRunStatus {
   pending
   queued
@@ -28,6 +69,71 @@ enum HumanReviewStatus {
   in_review
   approved
   rejected
+}
+
+enum ReviewWorkflowState {
+  draft_generated
+  awaiting_reviewer_assignment
+  in_technical_review
+  needs_additional_documentation
+  escalated
+  reviewer_conclusion_recorded
+  approved_for_internal_use
+  closed
+}
+
+enum ReviewPathType {
+  product_area
+  technical_risk
+  encryption_security
+  special_environment
+  military_space
+  general_fallback
+}
+
+enum ReviewPathStatus {
+  open
+  excluded_by_reviewer
+  needs_more_evidence
+  escalated
+  resolved
+}
+
+enum RegulationSourceKind {
+  primary_regulation
+  agency_guidance
+  internal_playbook
+  reviewer_note
+}
+
+enum RegulationVerificationStatus {
+  current
+  needs_verification
+  archived
+  superseded
+}
+
+enum ECCNCandidateStatus {
+  proposed
+  approved
+  rejected
+  modified
+  review_required
+}
+
+enum ReviewerActionType {
+  claim_review
+  assign_review
+  update_workflow
+  verify_fact
+  correct_fact
+  reject_fact
+  suppress_fact
+  update_review_path
+  update_eccn_candidate
+  record_conclusion
+  reopen_review
+  export_memo
 }
 
 enum MembershipRole {
@@ -61,7 +167,12 @@ model Organization {
   eccnCandidates     ECCNCandidate[]
   citations          Citation[]
   reviewMemos        ReviewMemo[]
+  reviewMemoVersions ReviewMemoVersion[]
   humanReviews       HumanReview[]
+  reviewPaths        ReviewPath[]
+  regulationSources  RegulationSource[]
+  factIssues         FactIssue[]
+  reviewerActions    ReviewerAction[]
   auditEvents        AuditEvent[]
   sessions           Session[]
   workspaceInvites   WorkspaceInvite[]
@@ -86,6 +197,7 @@ model User {
   sentWorkspaceInvites  WorkspaceInvite[]        @relation("WorkspaceInviteInviter")
   acceptedInvites       WorkspaceInvite[]        @relation("WorkspaceInviteAccepter")
   demoPublications      PublicDemoPublication[]
+  reviewerActions       ReviewerAction[]
 }
 
 model PasswordCredential {
@@ -199,15 +311,29 @@ model Document {
   organizationId     String
   title              String
   fileName           String
+  displayFileName    String?
   mimeType           String
   sizeBytes          Int?
   storagePath        String
   sourceType         DocumentSourceType  @default(upload)
+  documentType       String?
+  manufacturer       String?
+  sourceUrl          String?
+  sourceDate         DateTime?
+  versionLabel       String?
+  sha256             String?
+  pageCount          Int?
+  extractionStatus   ExtractionStatus    @default(pending)
+  extractionError    String?
+  origin             DocumentOrigin      @default(customer_provided)
+  visibility         DocumentVisibility  @default(private)
+  accessControl      Json?
   rawText            String?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   classificationRuns ClassificationRun[]
+  extractedFacts     ExtractedSpec[]
 
   @@index([organizationId, createdAt])
 }
@@ -217,10 +343,17 @@ model ClassificationRun {
   organizationId        String
   documentId            String
   status                ClassificationRunStatus  @default(pending)
+  workflowState         ReviewWorkflowState      @default(draft_generated)
   trigger               String                   @default("manual")
   confidence            Float?
+  confidenceRationale   String?
   uncertaintyFlags      String[]
   requiresHumanReview   Boolean                  @default(true)
+  reviewerAssignedUserId String?
+  reviewerClaimedAt     DateTime?
+  finalInternalRecommendation String?
+  conclusionDisclaimer  String?
+  lastReviewerActionAt  DateTime?
   workerJobId           String?
   workerVersion         String?
   rulesVersion          String?
@@ -235,8 +368,12 @@ model ClassificationRun {
   document              Document                 @relation(fields: [documentId], references: [id], onDelete: Cascade)
   extractedSpecs        ExtractedSpec[]
   eccnCandidates        ECCNCandidate[]
+  reviewPaths           ReviewPath[]
   reviewMemo            ReviewMemo?
+  reviewMemoVersions    ReviewMemoVersion[]
   humanReviews          HumanReview[]
+  factIssues            FactIssue[]
+  reviewerActions       ReviewerAction[]
   citations             Citation[]
   publicDemoPublication PublicDemoPublication?
 
@@ -265,18 +402,39 @@ model ExtractedSpec {
   id                  String             @id @default(cuid())
   organizationId      String
   classificationRunId String
+  sourceDocumentId    String?
   name                String
+  label               String?
   value               String
   unit                String?
   sourceSnippet       String
+  sourceText          String?
+  sourcePageFrom      Int?
+  sourcePageTo        Int?
+  boundingBoxes       Json?
   importance          String
+  extractionRationale String?
   confidence          Float
   confidenceLevel     String             @default("medium")
   category            String             @default("product_identity")
+  valueType           FactValueType      @default(directly_stated)
+  extractionMethod    String?
+  extractionMethodVersion String?
+  extractedAt         DateTime           @default(now())
+  reviewerStatus      FactVerificationStatus @default(unreviewed)
+  reviewerNote        String?
+  reviewerCorrectedValue String?
+  reviewerCorrectedUnit  String?
+  suppressFromMemo    Boolean            @default(false)
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
   organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   classificationRun   ClassificationRun  @relation(fields: [classificationRunId], references: [id], onDelete: Cascade)
+  sourceDocument      Document?          @relation(fields: [sourceDocumentId], references: [id], onDelete: SetNull)
+  reviewPathFacts     ReviewPathFact[]
+  candidateFactMappings CandidateFactMapping[]
+  factIssuesPrimary   FactIssue[]        @relation("FactIssuePrimaryFact")
+  factIssuesRelated   FactIssue[]        @relation("FactIssueRelatedFact")
 
   @@index([organizationId, createdAt])
   @@index([classificationRunId])
@@ -291,17 +449,34 @@ model ECCNCandidate {
   rationale             String
   confidence            Float
   confidenceLevel       String             @default("medium")
+  confidenceRationale   String?
+  status                ECCNCandidateStatus @default(review_required)
+  officialTitle         String?
+  regulationSourceId    String?
+  regulationVersion     String?
+  paragraphReference    String?
+  controlCriteria       Json?
+  mayApplyReasons       String[]
+  mayNotApplyReasons    String[]
   matchedTechnicalFacts String[]
   whyItMayApply         String
   whyItMayNotApply      String
   missingInformation    String[]
   reviewerQuestions     String[]
   uncertaintyFlags      String[]
+  alternativeCandidates Json?
+  reviewerDisposition   String?
+  reviewerDispositionRationale String?
+  reviewPathId          String?
+  isSpecificEccn        Boolean            @default(true)
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
   organization          Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   classificationRun     ClassificationRun  @relation(fields: [classificationRunId], references: [id], onDelete: Cascade)
   citations             Citation[]
+  regulationSource      RegulationSource?  @relation(fields: [regulationSourceId], references: [id], onDelete: SetNull)
+  reviewPath            ReviewPath?        @relation(fields: [reviewPathId], references: [id], onDelete: SetNull)
+  factMappings          CandidateFactMapping[]
 
   @@index([organizationId, createdAt])
   @@index([classificationRunId])
@@ -312,6 +487,8 @@ model Citation {
   organizationId      String
   classificationRunId String
   eccnCandidateId     String?
+  reviewPathId        String?
+  regulationSourceId  String?
   sourceTitle         String
   sourceUrl           String?
   sourceSection       String?
@@ -322,6 +499,8 @@ model Citation {
   organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   classificationRun   ClassificationRun  @relation(fields: [classificationRunId], references: [id], onDelete: Cascade)
   eccnCandidate       ECCNCandidate?     @relation(fields: [eccnCandidateId], references: [id], onDelete: SetNull)
+  reviewPath          ReviewPath?        @relation(fields: [reviewPathId], references: [id], onDelete: SetNull)
+  regulationSource    RegulationSource?  @relation(fields: [regulationSourceId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, createdAt])
   @@index([classificationRunId])
@@ -332,6 +511,10 @@ model ReviewMemo {
   organizationId      String
   classificationRunId String             @unique
   contentMarkdown     String
+  versionNumber       Int                @default(1)
+  reviewStateSnapshot ReviewWorkflowState @default(draft_generated)
+  reviewerStatusSnapshot String?
+  disclaimer          String?
   generatedBy         String             @default("worker_stub")
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
@@ -341,12 +524,39 @@ model ReviewMemo {
   @@index([organizationId, createdAt])
 }
 
+model ReviewMemoVersion {
+  id                  String             @id @default(cuid())
+  organizationId      String
+  classificationRunId String
+  versionNumber       Int
+  contentMarkdown     String
+  reviewStateSnapshot ReviewWorkflowState
+  reviewerStatusSnapshot String?
+  disclaimer          String?
+  generatedBy         String
+  createdAt           DateTime           @default(now())
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  classificationRun   ClassificationRun  @relation(fields: [classificationRunId], references: [id], onDelete: Cascade)
+
+  @@unique([classificationRunId, versionNumber])
+  @@index([organizationId, createdAt])
+}
+
 model HumanReview {
   id                  String             @id @default(cuid())
   organizationId      String
   classificationRunId String
   reviewerId          String
   status              HumanReviewStatus  @default(pending_review)
+  workflowState       ReviewWorkflowState @default(awaiting_reviewer_assignment)
+  approvalScope       String?
+  finalInternalRecommendation String?
+  caveats             String?
+  assumptions         String?
+  missingInformation  String?
+  conclusionRecordedAt DateTime?
+  claimedAt           DateTime?
+  reopenedAt          DateTime?
   notes               String?
   reviewedAt          DateTime?
   createdAt           DateTime           @default(now())
@@ -354,6 +564,119 @@ model HumanReview {
   organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   classificationRun   ClassificationRun  @relation(fields: [classificationRunId], references: [id], onDelete: Cascade)
   reviewer            User               @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([classificationRunId, createdAt])
+}
+
+model ReviewPath {
+  id                  String             @id @default(cuid())
+  organizationId      String
+  classificationRunId String
+  type                ReviewPathType
+  status              ReviewPathStatus   @default(open)
+  title               String
+  scope               String
+  whyTriggered        String
+  technicalRiskArea   String?
+  missingInformation  String[]
+  reviewerQuestions   String[]
+  reviewerNotes       String?
+  decisionRationale   String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  classificationRun   ClassificationRun  @relation(fields: [classificationRunId], references: [id], onDelete: Cascade)
+  facts               ReviewPathFact[]
+  citations           Citation[]
+  eccnCandidates      ECCNCandidate[]
+
+  @@index([organizationId, createdAt])
+  @@index([classificationRunId, status])
+}
+
+model ReviewPathFact {
+  id            String        @id @default(cuid())
+  reviewPathId  String
+  extractedSpecId String
+  createdAt     DateTime      @default(now())
+  reviewPath    ReviewPath     @relation(fields: [reviewPathId], references: [id], onDelete: Cascade)
+  extractedSpec ExtractedSpec  @relation(fields: [extractedSpecId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewPathId, extractedSpecId])
+}
+
+model RegulationSource {
+  id                  String                       @id @default(cuid())
+  organizationId      String
+  authority           String
+  regulationTitle     String
+  regulationVersion   String?
+  citationText        String
+  citationUrl         String?
+  sourceIdentifier    String?
+  section             String?
+  paragraph           String?
+  kind                RegulationSourceKind
+  lastVerifiedAt      DateTime?
+  verificationStatus  RegulationVerificationStatus @default(needs_verification)
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+  organization        Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  citations           Citation[]
+  eccnCandidates      ECCNCandidate[]
+
+  @@index([organizationId, createdAt])
+}
+
+model CandidateFactMapping {
+  id               String         @id @default(cuid())
+  eccnCandidateId  String
+  extractedSpecId  String
+  criterionLabel   String
+  matchedValue     String
+  comparisonResult String
+  notes            String?
+  createdAt        DateTime       @default(now())
+  eccnCandidate    ECCNCandidate  @relation(fields: [eccnCandidateId], references: [id], onDelete: Cascade)
+  extractedSpec    ExtractedSpec  @relation(fields: [extractedSpecId], references: [id], onDelete: Cascade)
+
+  @@unique([eccnCandidateId, extractedSpecId, criterionLabel])
+}
+
+model FactIssue {
+  id                  String        @id @default(cuid())
+  organizationId      String
+  classificationRunId String
+  primaryFactId       String?
+  relatedFactId       String?
+  issueType           FactIssueType
+  summary             String
+  details             String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  organization        Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  classificationRun   ClassificationRun @relation(fields: [classificationRunId], references: [id], onDelete: Cascade)
+  primaryFact         ExtractedSpec? @relation("FactIssuePrimaryFact", fields: [primaryFactId], references: [id], onDelete: SetNull)
+  relatedFact         ExtractedSpec? @relation("FactIssueRelatedFact", fields: [relatedFactId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@index([classificationRunId, issueType])
+}
+
+model ReviewerAction {
+  id                  String             @id @default(cuid())
+  organizationId      String
+  classificationRunId String
+  actorUserId         String
+  actionType          ReviewerActionType
+  targetType          String
+  targetId            String
+  details             Json?
+  createdAt           DateTime           @default(now())
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  classificationRun   ClassificationRun  @relation(fields: [classificationRunId], references: [id], onDelete: Cascade)
+  actorUser           User               @relation(fields: [actorUserId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, createdAt])
   @@index([classificationRunId, createdAt])

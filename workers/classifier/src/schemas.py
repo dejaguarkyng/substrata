@@ -34,6 +34,29 @@ class ExtractedSpec:
     category: str
     confidence: str
     display_name: str | None = None
+    source_text: str | None = None
+    source_page_from: int | None = None
+    source_page_to: int | None = None
+    bounding_boxes: list[dict[str, float]] | None = None
+    extraction_rationale: str = "Captured from source-backed technical text."
+    value_type: str = "directly_stated"
+    extraction_method: str = "python_worker"
+    extraction_method_version: str = "v4"
+
+
+@dataclass
+class RegulationSource:
+    authority: str
+    regulation_title: str
+    citation_text: str
+    kind: str
+    verification_status: str
+    regulation_version: str | None = None
+    citation_url: str | None = None
+    source_identifier: str | None = None
+    section: str | None = None
+    paragraph: str | None = None
+    last_verified_at: str | None = None
 
 
 @dataclass
@@ -42,6 +65,42 @@ class RegulatoryCitation:
     citation_text: str
     source: str
     relevance: str
+    regulation_source: RegulationSource | None = None
+
+
+@dataclass
+class FactIssue:
+    issue_type: str
+    summary: str
+    details: str | None = None
+    primary_fact_name: str | None = None
+    related_fact_name: str | None = None
+
+
+@dataclass
+class CandidateFactMapping:
+    fact_name: str
+    criterion_label: str
+    matched_value: str
+    comparison_result: str
+    notes: str | None = None
+
+
+@dataclass
+class ReviewPath:
+    path_key: str
+    title: str
+    scope: str
+    type: str
+    status: str
+    why_triggered: str
+    triggered_fact_names: list[str]
+    regulatory_citations: list[RegulatoryCitation]
+    missing_information: list[str]
+    reviewer_questions: list[str]
+    technical_risk_area: str | None = None
+    reviewer_notes: str | None = None
+    decision_rationale: str | None = None
 
 
 @dataclass
@@ -56,7 +115,18 @@ class ECCNCandidate:
     missing_information: list[str]
     uncertainty_flags: list[str]
     reviewer_questions: list[str]
+    official_title: str | None = None
+    confidence_rationale: str = "Evidence completeness remains limited."
+    status: str = "review_required"
+    regulation_source: RegulationSource | None = None
+    paragraph_reference: str | None = None
+    control_criteria: list[str] | None = None
+    fact_mappings: list[CandidateFactMapping] | None = None
+    may_apply_reasons: list[str] | None = None
+    may_not_apply_reasons: list[str] | None = None
+    alternative_candidates: list[dict[str, str]] | None = None
     review_path_id: str | None = None
+    review_path_key: str | None = None
 
 
 @dataclass
@@ -65,8 +135,11 @@ class WorkerOutput:
     organization_id: str
     requires_human_review: bool
     confidence: float
+    confidence_rationale: str
     uncertainty_flags: list[str]
     extracted_specs: list[ExtractedSpec]
+    fact_issues: list[FactIssue]
+    review_paths: list[ReviewPath]
     eccn_candidates: list[ECCNCandidate]
     memo_markdown: str
     artifacts: dict[str, str]

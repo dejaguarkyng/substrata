@@ -338,7 +338,18 @@ export function submitReview(payload: {
     | 'needs_more_information'
     | 'approved'
     | 'rejected';
+  workflowState:
+    | 'in_technical_review'
+    | 'needs_additional_documentation'
+    | 'escalated'
+    | 'reviewer_conclusion_recorded'
+    | 'approved_for_internal_use';
   note: string;
+  approvalScope?: string;
+  finalInternalRecommendation?: string;
+  caveats?: string;
+  assumptions?: string;
+  missingInformation?: string;
   csrfToken: string;
 }) {
   return clientFetch(`/classification-runs/${payload.runId}/review`, {
@@ -350,7 +361,13 @@ export function submitReview(payload: {
     },
     body: JSON.stringify({
       status: payload.status,
+      workflowState: payload.workflowState,
       note: payload.note,
+      approvalScope: payload.approvalScope ?? '',
+      finalInternalRecommendation: payload.finalInternalRecommendation ?? '',
+      caveats: payload.caveats ?? '',
+      assumptions: payload.assumptions ?? '',
+      missingInformation: payload.missingInformation ?? '',
     }),
   });
 }

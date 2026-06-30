@@ -43,11 +43,13 @@ export default async function ReviewDetailPage({
     <AppShell
       session={session}
       currentPath="/app/reviews"
-      title="ECCN review analysis"
-      description="Inspect extracted technical facts, recommended review paths, uncertainty, citations, and the human review-ready memo draft."
+      title="Review-ready technical analysis"
+      description="Inspect source-backed technical facts, review paths, potential ECCN candidates, uncertainty, reviewer activity, and the draft review memo."
       actions={
         <div className="flex flex-wrap gap-2">
-          <StatusBadge status={latestReview?.status} />
+          <Badge tone={run.hasReviewerConclusion ? 'success' : 'warning'}>
+            {run.workflowLabel}
+          </Badge>
           <Link
             href={`/app/documents/${run.document.id}`}
             className="inline-flex items-center rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
@@ -60,11 +62,39 @@ export default async function ReviewDetailPage({
       <div className="grid gap-6 xl:h-[calc(100vh-13rem)] xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-6 xl:min-h-0 xl:overflow-y-auto xl:pr-2">
           <Panel>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-lg border border-slate-200 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Review state
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">{run.workflowLabel}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Review paths
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">{run.reviewPaths.length}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Potential ECCN candidates
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">{run.eccnCandidates.length}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Fact issues
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">{run.factIssues.length}</p>
+              </div>
+            </div>
+          </Panel>
+          <Panel>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-slate-950">Recommended review paths</h2>
+                <h2 className="text-lg font-semibold text-slate-950">Potential review paths</h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  These are cited review paths for human review, not final determinations.
+                  These are review areas for qualified evaluation. They are not automatically ECCN candidates.
                 </p>
               </div>
               <div className="text-sm text-slate-600">
@@ -72,56 +102,56 @@ export default async function ReviewDetailPage({
                 <p className="mt-1">Updated: {formatDateTime(latestReview?.reviewedAt ?? run.completedAt ?? run.createdAt)}</p>
               </div>
             </div>
-            {run.eccnCandidates.length === 0 ? (
+            {run.reviewPaths.length === 0 ? (
               <div className="mt-4">
                 <EmptyState
-                  title="No recommended review paths yet"
+                  title="No review paths yet"
                   body="This run has not produced a review-path package yet."
                 />
               </div>
             ) : (
               <div className="mt-4 space-y-4">
-                {run.eccnCandidates.map((candidate) => (
-                  <div key={candidate.id} className="rounded-lg border border-slate-200 p-4">
+                {run.reviewPaths.map((path) => (
+                  <div key={path.id} className="rounded-lg border border-slate-200 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <p className="font-semibold text-slate-950">{candidate.eccn}</p>
-                        <p className="mt-1 text-sm text-slate-600">{candidate.title}</p>
+                        <p className="font-semibold text-slate-950">{path.title}</p>
+                        <p className="mt-1 text-sm text-slate-600">{path.scope}</p>
                       </div>
-                      <Badge tone={confidenceTone(candidate.confidence)}>
-                        {candidate.confidence} confidence
-                      </Badge>
+                      <StatusBadge status={path.status} />
                     </div>
                     <p className="mt-3 text-sm leading-6 text-slate-700">
-                      {candidate.whyItMayApply}
+                      {path.whyTriggered}
                     </p>
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                          Why it may not apply
+                          Supporting facts
                         </p>
-                        <p className="mt-2 text-sm text-slate-600">
-                          {candidate.whyItMayNotApply}
-                        </p>
+                        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+                          {path.supportingFacts.map((fact) => (
+                            <li key={fact.id}>{fact.label}: {fact.value}{fact.unit ? ` ${fact.unit}` : ''}</li>
+                          ))}
+                        </ul>
                       </div>
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                           Missing information
                         </p>
                         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
-                          {candidate.missingInformation.map((item) => (
+                          {path.missingInformation.map((item) => (
                             <li key={item}>{item}</li>
                           ))}
                         </ul>
                       </div>
                     </div>
-                    {candidate.regulatoryCitations.length > 0 ? (
+                    {path.regulatoryCitations.length > 0 ? (
                       <div className="mt-4 border-t border-slate-200 pt-4">
                         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                          Citations
+                          Regulation-level citations
                         </p>
                         <div className="mt-2 space-y-3">
-                          {candidate.regulatoryCitations.map((citation) => (
+                          {path.regulatoryCitations.map((citation) => (
                             <div key={citation.id ?? citation.citationLabel} className="rounded-lg bg-slate-50 p-3">
                               <p className="text-sm font-medium text-slate-950">{citation.citationLabel}</p>
                               <p className="mt-1 text-sm text-slate-600">{citation.citationText}</p>
@@ -133,6 +163,38 @@ export default async function ReviewDetailPage({
                         </div>
                       </div>
                     ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+          <Panel>
+            <h2 className="text-lg font-semibold text-slate-950">Potential ECCN candidates</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Only specific ECCN identifiers with regulation mapping appear here. Each still requires qualified reviewer confirmation.
+            </p>
+            {run.eccnCandidates.length === 0 ? (
+              <div className="mt-4">
+                <EmptyState
+                  title="No specific ECCN candidates supported"
+                  body="Substrata did not find enough regulation-backed evidence to support a specific ECCN candidate yet."
+                />
+              </div>
+            ) : (
+              <div className="mt-4 space-y-4">
+                {run.eccnCandidates.map((candidate) => (
+                  <div key={candidate.id} className="rounded-lg border border-slate-200 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-slate-950">{candidate.eccn}</p>
+                        <p className="mt-1 text-sm text-slate-600">{candidate.officialTitle}</p>
+                      </div>
+                      <Badge tone={confidenceTone(candidate.confidence)}>
+                        {candidate.confidence} evidence confidence
+                      </Badge>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-slate-700">{candidate.whyItMayApply}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{candidate.whyItMayNotApply}</p>
                   </div>
                 ))}
               </div>
@@ -151,7 +213,7 @@ export default async function ReviewDetailPage({
                   <div key={spec.id} className="rounded-lg border border-slate-200 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <p className="font-medium capitalize text-slate-950">
-                        {spec.name.replace(/_/g, ' ')}
+                        {spec.label}
                       </p>
                       <Badge tone={confidenceTone(spec.confidence)}>{spec.confidence}</Badge>
                     </div>
@@ -160,7 +222,7 @@ export default async function ReviewDetailPage({
                       {spec.unit ? ` ${spec.unit}` : ''}
                     </p>
                     <p className="mt-2 text-xs uppercase tracking-[0.14em] text-slate-500">
-                      {spec.category} / {spec.importance}
+                      {spec.category} / {spec.valueType.replace(/_/g, ' ')}
                     </p>
                     <p className="mt-2 text-sm text-slate-500">{spec.sourceSnippet}</p>
                   </div>
@@ -168,6 +230,19 @@ export default async function ReviewDetailPage({
               </div>
             )}
           </Panel>
+          {run.factIssues.length > 0 ? (
+            <Panel>
+              <h2 className="text-lg font-semibold text-slate-950">Open contradictions and scope warnings</h2>
+              <div className="mt-4 space-y-3">
+                {run.factIssues.map((issue) => (
+                  <div key={issue.id} className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <p className="font-medium text-amber-950">{issue.summary}</p>
+                    {issue.details ? <p className="mt-2 text-sm text-amber-900">{issue.details}</p> : null}
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          ) : null}
         </div>
         <div className="space-y-6 xl:min-h-0 xl:overflow-y-auto xl:pl-2">
           <Panel>
@@ -183,7 +258,7 @@ export default async function ReviewDetailPage({
             ) : null}
 
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-slate-950">Classification memo draft</h2>
+              <h2 className="text-lg font-semibold text-slate-950">Draft review memo</h2>
               {run.reviewMemo?.contentMarkdown ? (
                 <MemoDownloadLink href={memoDownloadHref} />
               ) : null}
@@ -195,14 +270,14 @@ export default async function ReviewDetailPage({
             ) : (
               <EmptyState
                 title="Memo draft not available"
-                body="Substrata has not generated a review-ready memo draft for this run yet."
+                body="Substrata has not generated a draft review memo for this run yet."
               />
             )}
           </Panel>
           <Panel>
-            <h2 className="text-lg font-semibold text-slate-950">Human review decision</h2>
+            <h2 className="text-lg font-semibold text-slate-950">Reviewer conclusion</h2>
             <p className="mt-2 text-sm text-slate-600">
-              Record the reviewer disposition. Substrata keeps this as review-ready analysis rather than a final legal determination.
+              Record authenticated reviewer actions, caveats, and internal recommendation. Only recorded reviewer actions can move this workup into a human-reviewed state.
             </p>
             {run.uncertaintyFlags.length > 0 ? (
               <div className="mt-4">
@@ -217,11 +292,13 @@ export default async function ReviewDetailPage({
                 defaultStatus={
                   (latestReview?.status as
                     | 'pending_review'
+                    | 'reviewed'
                     | 'approved'
                     | 'needs_more_information'
                     | 'rejected') ?? 'pending_review'
                 }
                 defaultNote={latestReview?.notes}
+                defaultRecommendation={latestReview?.finalInternalRecommendation}
                 canReview={canReview}
               />
             </div>

@@ -2,10 +2,11 @@ import type { MembershipRecord } from './types';
 
 export function formatReviewStatus(status?: string | null) {
   if (status === 'uploaded') return 'Uploaded';
-  if (!status || status === 'pending_review') return 'Needs human review';
-  if (status === 'approved' || status === 'reviewed') return 'Approved';
+  if (!status || status === 'pending_review') return 'Awaiting qualified reviewer';
+  if (status === 'approved') return 'Approved for internal use';
+  if (status === 'reviewed') return 'Reviewer conclusion recorded';
   if (status === 'needs_more_information') return 'Needs more information';
-  if (status === 'rejected') return 'Escalated for review';
+  if (status === 'rejected') return 'Escalated';
   if (status === 'processing') return 'Review paths generated';
   if (status === 'failed') return 'Failed';
   return status.replace(/_/g, ' ');

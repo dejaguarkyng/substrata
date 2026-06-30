@@ -18,19 +18,29 @@ export const mockDashboard = {
         {
           id: 'run_demo_1',
           status: 'completed',
+          workflowState: 'awaiting_reviewer_assignment',
+          workflowLabel: 'Awaiting qualified reviewer',
           uncertaintyFlags: [
             'multiple_plausible_eccns',
             'requires_engineering_confirmation',
           ],
           requiresHumanReview: true,
           extractedSpecs: [],
+          factIssues: [],
+          reviewPaths: [],
           eccnCandidates: [],
+          reviewMemo: null,
+          reviewerActions: [],
+          humanReviewStatus: 'pending_review',
+          hasReviewerConclusion: false,
           document: {
             id: 'doc_demo_1',
             title: 'Radiation-Tolerant Edge Accelerator Datasheet',
             fileName: 'rad-edge-accelerator.txt',
           },
-          humanReviews: [{ id: 'review_1', status: 'pending_review' }],
+          humanReviews: [
+            { id: 'review_1', status: 'pending_review', workflowState: 'awaiting_reviewer_assignment' },
+          ],
         },
       ],
     },
@@ -40,6 +50,8 @@ export const mockDashboard = {
 export const mockRun: ClassificationRunRecord = {
   id: 'run_demo_1',
   status: 'completed',
+  workflowState: 'awaiting_reviewer_assignment',
+  workflowLabel: 'Awaiting qualified reviewer',
   confidence: 0.64,
   extractedTextPath: '/tmp/substrata/extracted.txt',
   structuredOutputPath: '/tmp/substrata/output.json',
@@ -63,33 +75,47 @@ export const mockRun: ClassificationRunRecord = {
   extractedSpecs: [
     {
       id: 'spec_1',
-      name: 'process_node',
+      canonicalFieldName: 'process_node',
+      label: 'Process node',
       value: '7',
       unit: 'nm',
       sourceSnippet: 'Manufactured on a 7 nm process node',
+      sourceText: 'Manufactured on a 7 nm process node',
       importance:
         'Process technology can matter when performance claims are compared to narrower semiconductor thresholds.',
       category: 'converter_performance',
       confidence: 'medium',
+      valueType: 'directly_stated',
+      reviewerStatus: 'unreviewed',
     },
     {
       id: 'spec_2',
-      name: 'serdes_rate',
+      canonicalFieldName: 'serdes_rate',
+      label: 'SerDes rate',
       value: '112',
       unit: 'Gbps',
       sourceSnippet: 'Supports 112 Gbps PAM4 SerDes lanes',
+      sourceText: 'Supports 112 Gbps PAM4 SerDes lanes',
       importance:
         'High-speed interconnect claims are central to the first-pass Category 3 review.',
       category: 'digital_interface',
       confidence: 'medium',
+      valueType: 'directly_stated',
+      reviewerStatus: 'unreviewed',
     },
   ],
+  factIssues: [],
+  reviewPaths: [],
   eccnCandidates: [
     {
       id: 'cand_1',
       eccn: '3A001',
       title: 'Specified electronic items and components',
+      officialTitle: 'Specified electronic items and components',
+      status: 'review_required',
       confidence: 'medium',
+      controlCriteria: ['High-speed interface performance comparison'],
+      factMappings: [],
       matchedTechnicalFacts: [
         'process_node: 7 nm',
         'serdes_rate: 112 Gbps',
@@ -110,6 +136,8 @@ export const mockRun: ClassificationRunRecord = {
         'The extracted semiconductor performance facts support a closer Category 3 review path.',
       whyItMayNotApply:
         'The current evidence still lacks precise threshold mapping to a narrower entry.',
+      mayApplyReasons: ['High-speed interface evidence'],
+      mayNotApplyReasons: ['Exact threshold mapping remains open'],
       missingInformation: [
         'Precise architecture and threshold mapping',
         'Supporting engineering clarification for specialized deployment claims',
@@ -121,16 +149,23 @@ export const mockRun: ClassificationRunRecord = {
       reviewerQuestions: [
         'Which exact control-text threshold is the closest fit for these extracted facts?',
       ],
+      alternativeCandidates: [],
+      isSpecificEccn: true,
+      confidenceRationale: 'Threshold mapping is incomplete, but the source-backed interface facts warrant a specific ECCN comparison.',
     },
   ],
   reviewMemo: {
     contentMarkdown:
       '# Draft ECCN Review Memo — Radiation-Tolerant Edge Accelerator Datasheet\n\n## 1. Document Summary\n- Title: Radiation-Tolerant Edge Accelerator Datasheet\n- Disclaimer: Draft for expert review only.',
   },
+  reviewerActions: [],
+  humanReviewStatus: 'pending_review',
+  hasReviewerConclusion: false,
   humanReviews: [
     {
       id: 'review_1',
       status: 'pending_review',
+      workflowState: 'awaiting_reviewer_assignment',
       reviewer: {
         name: 'Demo Reviewer',
       },

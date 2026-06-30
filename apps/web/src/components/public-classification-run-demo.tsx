@@ -82,8 +82,8 @@ export function PublicClassificationRunDemo({
               </a>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <Badge tone="info">Public product demo</Badge>
-                <Badge tone="default">{run.status}</Badge>
-                {run.latestReview ? <Badge tone="success">Human-reviewed preview</Badge> : null}
+                <Badge tone="default">{run.workflowLabel}</Badge>
+                {run.latestReview?.conclusionRecordedAt ? <Badge tone="success">Reviewer conclusion recorded</Badge> : null}
               </div>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <h1 className="max-w-4xl text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
@@ -99,8 +99,7 @@ export function PublicClassificationRunDemo({
                 ) : null}
               </div>
               <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-                {run.publicSummary ??
-                  'A human-reviewed technical classification workup generated from a publicly available product datasheet.'}
+                {run.publicSummary ?? run.demoBanner}
               </p>
             </div>
             <div className="shrink-0">
@@ -121,8 +120,8 @@ export function PublicClassificationRunDemo({
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                 Review paths
               </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">{run.eccnCandidates.length}</p>
-              <p className="mt-1 text-sm text-slate-600">Cited candidate classifications</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">{run.reviewPaths.length}</p>
+              <p className="mt-1 text-sm text-slate-600">Potential review paths</p>
             </Panel>
             <Panel className="p-4 shadow-none">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
@@ -155,7 +154,7 @@ export function PublicClassificationRunDemo({
                   <div key={spec.id} className="rounded-lg border border-slate-200 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <p className="font-medium capitalize text-slate-950">
-                        {spec.name.replaceAll('_', ' ')}
+                        {spec.label}
                       </p>
                       <Badge tone={confidenceTone(spec.confidence)}>{spec.confidence}</Badge>
                     </div>
@@ -173,15 +172,15 @@ export function PublicClassificationRunDemo({
             </Panel>
 
             <Panel>
-              <h2 className="text-lg font-semibold text-slate-950">Missing-information flags</h2>
+              <h2 className="text-lg font-semibold text-slate-950">Open information and contradictions</h2>
               <p className="mt-2 text-sm text-slate-600">
                 These are the open items a reviewer would still want clarified before adopting a final internal position.
               </p>
               <div className="mt-4 space-y-4">
-                {run.eccnCandidates.map((candidate) => (
+                {run.reviewPaths.map((candidate) => (
                   <div key={candidate.id} className="rounded-lg border border-slate-200 p-4">
                     <p className="font-medium text-slate-950">
-                      {candidate.eccn} / {candidate.title}
+                      {candidate.title}
                     </p>
                     <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-600">
                       {candidate.missingInformation.map((item) => (
@@ -196,9 +195,9 @@ export function PublicClassificationRunDemo({
 
           <div className="space-y-6">
             <Panel>
-              <h2 className="text-lg font-semibold text-slate-950">Candidate classifications with citations</h2>
+              <h2 className="text-lg font-semibold text-slate-950">Potential ECCN candidates with regulation mapping</h2>
               <p className="mt-2 text-sm text-slate-600">
-                Substrata presents cited review paths for human review, not final determinations.
+                This demo distinguishes review paths from specific ECCN candidates. Potential ECCN candidates appear only where a specific code and regulation mapping exist.
               </p>
               <div className="mt-4 space-y-4">
                 {run.eccnCandidates.map((candidate) => (
