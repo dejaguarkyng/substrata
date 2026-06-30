@@ -126,8 +126,12 @@ export function DemoPublicationControls({
       </div>
 
       {!status.canPublish ? (
-        <InlineNotice tone="warning" title="Completed run required">
-          Only completed runs with a generated classification memo draft can be published.
+        <InlineNotice
+          tone="warning"
+          title={status.publishBlockTitle ?? 'Publication blocked'}
+        >
+          {status.publishBlockReason ??
+            'Only completed runs with a generated classification memo draft can be published.'}
         </InlineNotice>
       ) : null}
 

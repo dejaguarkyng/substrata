@@ -1336,12 +1336,30 @@ export async function getClassificationRunDemoPublicationStatus(
   const isPublished =
     publication?.status === 'published' &&
     publication.activeClassificationRunId === classificationRunId;
+  const hasCompletedRun = run.status === 'completed' && Boolean(run.completedAt);
+  const hasMemo = Boolean(run.reviewMemo);
+  const hasValidationIssues =
+    Array.isArray(run.validationIssues) && run.validationIssues.length > 0;
+  let publishBlockTitle: string | null = null;
+  let publishBlockReason: string | null = null;
+  if (!hasCompletedRun) {
+    publishBlockTitle = 'Completed run required';
+    publishBlockReason =
+      'This run is not fully completed yet. Finish processing before publishing.';
+  } else if (!hasMemo) {
+    publishBlockTitle = 'Memo draft required';
+    publishBlockReason =
+      'A generated classification memo draft is required before publishing.';
+  } else if (hasValidationIssues) {
+    publishBlockTitle = 'Validation issues must be resolved';
+    publishBlockReason =
+      'This run has unresolved validation issues and cannot be published publicly until they are resolved.';
+  }
 
   return {
-    canPublish:
-      run.status === 'completed' &&
-      Boolean(run.reviewMemo) &&
-      (!Array.isArray(run.validationIssues) || run.validationIssues.length === 0),
+    canPublish: !publishBlockReason,
+    publishBlockTitle,
+    publishBlockReason,
     isPublished,
     publishedAt: isPublished ? publication?.publishedAt ?? null : null,
     publicTitle: isPublished ? publication?.publicTitle ?? null : null,

@@ -396,6 +396,8 @@ export interface PublicClassificationRunRecord {
 
 export interface DemoPublicationStatusRecord {
   canPublish: boolean;
+  publishBlockTitle?: string | null;
+  publishBlockReason?: string | null;
   isPublished: boolean;
   publishedAt?: string | null;
   publicTitle?: string | null;

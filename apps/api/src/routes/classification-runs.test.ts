@@ -229,6 +229,8 @@ test('publishing status stays scoped to the authenticated organization run', asy
           organizationId === 'org_1' && runId === 'run_1'
             ? {
                 canPublish: true,
+                publishBlockTitle: null,
+                publishBlockReason: null,
                 isPublished: false,
                 publishedAt: null,
                 publicTitle: null,
@@ -245,6 +247,8 @@ test('publishing status stays scoped to the authenticated organization run', asy
     assert.equal(response.statusCode, 200);
     assert.deepEqual(response.body, {
       canPublish: true,
+      publishBlockTitle: null,
+      publishBlockReason: null,
       isPublished: false,
       publishedAt: null,
       publicTitle: null,

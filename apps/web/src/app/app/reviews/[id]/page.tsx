@@ -65,27 +65,29 @@ export default async function ReviewDetailPage({
       <div className="grid gap-6 xl:h-[calc(100vh-13rem)] xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-6 xl:min-h-0 xl:overflow-y-auto xl:pr-2">
           <Panel>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-lg border border-slate-200 p-4">
+            <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+              <div className="min-h-28 rounded-lg border border-slate-200 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                   Processing status
                 </p>
                 <p className="mt-2 text-sm font-semibold text-slate-950">{run.processingLabel ?? run.status}</p>
-                <p className="mt-1 text-xs text-slate-500">{run.reviewStatusDetail ?? run.workflowLabel}</p>
+                {run.status === 'needs_attention' ? (
+                  <p className="mt-1 text-xs text-amber-800">Validation required</p>
+                ) : null}
               </div>
-              <div className="rounded-lg border border-slate-200 p-4">
+              <div className="min-h-28 rounded-lg border border-slate-200 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                   Review paths
                 </p>
                 <p className="mt-2 text-sm font-semibold text-slate-950">{run.reviewPaths.length}</p>
               </div>
-              <div className="rounded-lg border border-slate-200 p-4">
+              <div className="min-h-28 rounded-lg border border-slate-200 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                   Potential ECCN candidates
                 </p>
                 <p className="mt-2 text-sm font-semibold text-slate-950">{run.eccnCandidates.length}</p>
               </div>
-              <div className="rounded-lg border border-slate-200 p-4">
+              <div className="min-h-28 rounded-lg border border-slate-200 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                   Fact issues
                 </p>
