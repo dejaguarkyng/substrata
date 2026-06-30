@@ -39,19 +39,19 @@ CREATE TYPE "ReviewerActionType" AS ENUM ('claim_review', 'assign_review', 'upda
 
 -- AlterTable
 ALTER TABLE "Document"
-  ADD COLUMN "displayFileName" TEXT,
-  ADD COLUMN "documentType" TEXT,
-  ADD COLUMN "manufacturer" TEXT,
-  ADD COLUMN "sourceUrl" TEXT,
-  ADD COLUMN "sourceDate" TIMESTAMP(3),
-  ADD COLUMN "versionLabel" TEXT,
-  ADD COLUMN "sha256" TEXT,
-  ADD COLUMN "pageCount" INTEGER,
-  ADD COLUMN "extractionStatus" "ExtractionStatus" NOT NULL DEFAULT 'pending',
-  ADD COLUMN "extractionError" TEXT,
-  ADD COLUMN "origin" "DocumentOrigin" NOT NULL DEFAULT 'customer_provided',
-  ADD COLUMN "visibility" "DocumentVisibility" NOT NULL DEFAULT 'private',
-  ADD COLUMN "accessControl" JSONB;
+  ADD COLUMN IF NOT EXISTS "displayFileName" TEXT,
+  ADD COLUMN IF NOT EXISTS "documentType" TEXT,
+  ADD COLUMN IF NOT EXISTS "manufacturer" TEXT,
+  ADD COLUMN IF NOT EXISTS "sourceUrl" TEXT,
+  ADD COLUMN IF NOT EXISTS "sourceDate" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "versionLabel" TEXT,
+  ADD COLUMN IF NOT EXISTS "sha256" TEXT,
+  ADD COLUMN IF NOT EXISTS "pageCount" INTEGER,
+  ADD COLUMN IF NOT EXISTS "extractionStatus" "ExtractionStatus" NOT NULL DEFAULT 'pending',
+  ADD COLUMN IF NOT EXISTS "extractionError" TEXT,
+  ADD COLUMN IF NOT EXISTS "origin" "DocumentOrigin" NOT NULL DEFAULT 'customer_provided',
+  ADD COLUMN IF NOT EXISTS "visibility" "DocumentVisibility" NOT NULL DEFAULT 'private',
+  ADD COLUMN IF NOT EXISTS "accessControl" JSONB;
 
 UPDATE "Document"
 SET
@@ -63,13 +63,13 @@ WHERE "displayFileName" IS NULL;
 
 -- AlterTable
 ALTER TABLE "ClassificationRun"
-  ADD COLUMN "workflowState" "ReviewWorkflowState" NOT NULL DEFAULT 'draft_generated',
-  ADD COLUMN "confidenceRationale" TEXT,
-  ADD COLUMN "reviewerAssignedUserId" TEXT,
-  ADD COLUMN "reviewerClaimedAt" TIMESTAMP(3),
-  ADD COLUMN "finalInternalRecommendation" TEXT,
-  ADD COLUMN "conclusionDisclaimer" TEXT,
-  ADD COLUMN "lastReviewerActionAt" TIMESTAMP(3);
+  ADD COLUMN IF NOT EXISTS "workflowState" "ReviewWorkflowState" NOT NULL DEFAULT 'draft_generated',
+  ADD COLUMN IF NOT EXISTS "confidenceRationale" TEXT,
+  ADD COLUMN IF NOT EXISTS "reviewerAssignedUserId" TEXT,
+  ADD COLUMN IF NOT EXISTS "reviewerClaimedAt" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "finalInternalRecommendation" TEXT,
+  ADD COLUMN IF NOT EXISTS "conclusionDisclaimer" TEXT,
+  ADD COLUMN IF NOT EXISTS "lastReviewerActionAt" TIMESTAMP(3);
 
 UPDATE "ClassificationRun"
 SET
@@ -83,25 +83,24 @@ WHERE "conclusionDisclaimer" IS NULL;
 
 -- AlterTable
 ALTER TABLE "ExtractedSpec"
-  ADD COLUMN "organizationId" TEXT,
-  ADD COLUMN "sourceDocumentId" TEXT,
-  ADD COLUMN "label" TEXT,
-  ADD COLUMN "sourceText" TEXT,
-  ADD COLUMN "sourcePageFrom" INTEGER,
-  ADD COLUMN "sourcePageTo" INTEGER,
-  ADD COLUMN "boundingBoxes" JSONB,
-  ADD COLUMN "extractionRationale" TEXT,
-  ADD COLUMN "confidenceLevel" TEXT NOT NULL DEFAULT 'medium',
-  ADD COLUMN "category" TEXT NOT NULL DEFAULT 'product_identity',
-  ADD COLUMN "valueType" "FactValueType" NOT NULL DEFAULT 'directly_stated',
-  ADD COLUMN "extractionMethod" TEXT,
-  ADD COLUMN "extractionMethodVersion" TEXT,
-  ADD COLUMN "extractedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  ADD COLUMN "reviewerStatus" "FactVerificationStatus" NOT NULL DEFAULT 'unreviewed',
-  ADD COLUMN "reviewerNote" TEXT,
-  ADD COLUMN "reviewerCorrectedValue" TEXT,
-  ADD COLUMN "reviewerCorrectedUnit" TEXT,
-  ADD COLUMN "suppressFromMemo" BOOLEAN NOT NULL DEFAULT false;
+  ADD COLUMN IF NOT EXISTS "sourceDocumentId" TEXT,
+  ADD COLUMN IF NOT EXISTS "label" TEXT,
+  ADD COLUMN IF NOT EXISTS "sourceText" TEXT,
+  ADD COLUMN IF NOT EXISTS "sourcePageFrom" INTEGER,
+  ADD COLUMN IF NOT EXISTS "sourcePageTo" INTEGER,
+  ADD COLUMN IF NOT EXISTS "boundingBoxes" JSONB,
+  ADD COLUMN IF NOT EXISTS "extractionRationale" TEXT,
+  ADD COLUMN IF NOT EXISTS "confidenceLevel" TEXT NOT NULL DEFAULT 'medium',
+  ADD COLUMN IF NOT EXISTS "category" TEXT NOT NULL DEFAULT 'product_identity',
+  ADD COLUMN IF NOT EXISTS "valueType" "FactValueType" NOT NULL DEFAULT 'directly_stated',
+  ADD COLUMN IF NOT EXISTS "extractionMethod" TEXT,
+  ADD COLUMN IF NOT EXISTS "extractionMethodVersion" TEXT,
+  ADD COLUMN IF NOT EXISTS "extractedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  ADD COLUMN IF NOT EXISTS "reviewerStatus" "FactVerificationStatus" NOT NULL DEFAULT 'unreviewed',
+  ADD COLUMN IF NOT EXISTS "reviewerNote" TEXT,
+  ADD COLUMN IF NOT EXISTS "reviewerCorrectedValue" TEXT,
+  ADD COLUMN IF NOT EXISTS "reviewerCorrectedUnit" TEXT,
+  ADD COLUMN IF NOT EXISTS "suppressFromMemo" BOOLEAN NOT NULL DEFAULT false;
 
 UPDATE "ExtractedSpec" spec
 SET
@@ -119,21 +118,21 @@ ALTER TABLE "ExtractedSpec"
 
 -- AlterTable
 ALTER TABLE "ECCNCandidate"
-  ADD COLUMN "organizationId" TEXT,
-  ADD COLUMN "confidenceRationale" TEXT,
-  ADD COLUMN "status" "ECCNCandidateStatus" NOT NULL DEFAULT 'review_required',
-  ADD COLUMN "officialTitle" TEXT,
-  ADD COLUMN "regulationSourceId" TEXT,
-  ADD COLUMN "regulationVersion" TEXT,
-  ADD COLUMN "paragraphReference" TEXT,
-  ADD COLUMN "controlCriteria" JSONB,
-  ADD COLUMN "mayApplyReasons" TEXT[] DEFAULT ARRAY[]::TEXT[],
-  ADD COLUMN "mayNotApplyReasons" TEXT[] DEFAULT ARRAY[]::TEXT[],
-  ADD COLUMN "alternativeCandidates" JSONB,
-  ADD COLUMN "reviewerDisposition" TEXT,
-  ADD COLUMN "reviewerDispositionRationale" TEXT,
-  ADD COLUMN "reviewPathId" TEXT,
-  ADD COLUMN "isSpecificEccn" BOOLEAN NOT NULL DEFAULT true;
+  ADD COLUMN IF NOT EXISTS "organizationId" TEXT,
+  ADD COLUMN IF NOT EXISTS "confidenceRationale" TEXT,
+  ADD COLUMN IF NOT EXISTS "status" "ECCNCandidateStatus" NOT NULL DEFAULT 'review_required',
+  ADD COLUMN IF NOT EXISTS "officialTitle" TEXT,
+  ADD COLUMN IF NOT EXISTS "regulationSourceId" TEXT,
+  ADD COLUMN IF NOT EXISTS "regulationVersion" TEXT,
+  ADD COLUMN IF NOT EXISTS "paragraphReference" TEXT,
+  ADD COLUMN IF NOT EXISTS "controlCriteria" JSONB,
+  ADD COLUMN IF NOT EXISTS "mayApplyReasons" TEXT[] DEFAULT ARRAY[]::TEXT[],
+  ADD COLUMN IF NOT EXISTS "mayNotApplyReasons" TEXT[] DEFAULT ARRAY[]::TEXT[],
+  ADD COLUMN IF NOT EXISTS "alternativeCandidates" JSONB,
+  ADD COLUMN IF NOT EXISTS "reviewerDisposition" TEXT,
+  ADD COLUMN IF NOT EXISTS "reviewerDispositionRationale" TEXT,
+  ADD COLUMN IF NOT EXISTS "reviewPathId" TEXT,
+  ADD COLUMN IF NOT EXISTS "isSpecificEccn" BOOLEAN NOT NULL DEFAULT true;
 
 UPDATE "ECCNCandidate" candidate
 SET
@@ -151,9 +150,9 @@ ALTER TABLE "ECCNCandidate"
 
 -- AlterTable
 ALTER TABLE "Citation"
-  ADD COLUMN "organizationId" TEXT,
-  ADD COLUMN "reviewPathId" TEXT,
-  ADD COLUMN "regulationSourceId" TEXT;
+  ADD COLUMN IF NOT EXISTS "organizationId" TEXT,
+  ADD COLUMN IF NOT EXISTS "reviewPathId" TEXT,
+  ADD COLUMN IF NOT EXISTS "regulationSourceId" TEXT;
 
 UPDATE "Citation" citation
 SET "organizationId" = run."organizationId"
@@ -166,22 +165,22 @@ ALTER TABLE "Citation"
 
 -- AlterTable
 ALTER TABLE "ReviewMemo"
-  ADD COLUMN "versionNumber" INTEGER NOT NULL DEFAULT 1,
-  ADD COLUMN "reviewStateSnapshot" "ReviewWorkflowState" NOT NULL DEFAULT 'draft_generated',
-  ADD COLUMN "reviewerStatusSnapshot" TEXT,
-  ADD COLUMN "disclaimer" TEXT;
+  ADD COLUMN IF NOT EXISTS "versionNumber" INTEGER NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS "reviewStateSnapshot" "ReviewWorkflowState" NOT NULL DEFAULT 'draft_generated',
+  ADD COLUMN IF NOT EXISTS "reviewerStatusSnapshot" TEXT,
+  ADD COLUMN IF NOT EXISTS "disclaimer" TEXT;
 
 -- AlterTable
 ALTER TABLE "HumanReview"
-  ADD COLUMN "workflowState" "ReviewWorkflowState" NOT NULL DEFAULT 'awaiting_reviewer_assignment',
-  ADD COLUMN "approvalScope" TEXT,
-  ADD COLUMN "finalInternalRecommendation" TEXT,
-  ADD COLUMN "caveats" TEXT,
-  ADD COLUMN "assumptions" TEXT,
-  ADD COLUMN "missingInformation" TEXT,
-  ADD COLUMN "conclusionRecordedAt" TIMESTAMP(3),
-  ADD COLUMN "claimedAt" TIMESTAMP(3),
-  ADD COLUMN "reopenedAt" TIMESTAMP(3);
+  ADD COLUMN IF NOT EXISTS "workflowState" "ReviewWorkflowState" NOT NULL DEFAULT 'awaiting_reviewer_assignment',
+  ADD COLUMN IF NOT EXISTS "approvalScope" TEXT,
+  ADD COLUMN IF NOT EXISTS "finalInternalRecommendation" TEXT,
+  ADD COLUMN IF NOT EXISTS "caveats" TEXT,
+  ADD COLUMN IF NOT EXISTS "assumptions" TEXT,
+  ADD COLUMN IF NOT EXISTS "missingInformation" TEXT,
+  ADD COLUMN IF NOT EXISTS "conclusionRecordedAt" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "claimedAt" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "reopenedAt" TIMESTAMP(3);
 
 UPDATE "HumanReview"
 SET
@@ -326,31 +325,73 @@ CREATE TABLE "ReviewerAction" (
 );
 
 -- CreateIndex
-CREATE INDEX "ExtractedSpec_organizationId_createdAt_idx" ON "ExtractedSpec"("organizationId", "createdAt");
-CREATE INDEX "ExtractedSpec_classificationRunId_idx" ON "ExtractedSpec"("classificationRunId");
-CREATE INDEX "ECCNCandidate_organizationId_createdAt_idx" ON "ECCNCandidate"("organizationId", "createdAt");
-CREATE INDEX "ECCNCandidate_classificationRunId_idx" ON "ECCNCandidate"("classificationRunId");
-CREATE INDEX "Citation_organizationId_createdAt_idx" ON "Citation"("organizationId", "createdAt");
-CREATE INDEX "Citation_classificationRunId_idx" ON "Citation"("classificationRunId");
-CREATE UNIQUE INDEX "ReviewMemoVersion_classificationRunId_versionNumber_key" ON "ReviewMemoVersion"("classificationRunId", "versionNumber");
-CREATE INDEX "ReviewMemoVersion_organizationId_createdAt_idx" ON "ReviewMemoVersion"("organizationId", "createdAt");
-CREATE INDEX "ReviewPath_organizationId_createdAt_idx" ON "ReviewPath"("organizationId", "createdAt");
-CREATE INDEX "ReviewPath_classificationRunId_status_idx" ON "ReviewPath"("classificationRunId", "status");
-CREATE UNIQUE INDEX "ReviewPathFact_reviewPathId_extractedSpecId_key" ON "ReviewPathFact"("reviewPathId", "extractedSpecId");
-CREATE INDEX "RegulationSource_organizationId_createdAt_idx" ON "RegulationSource"("organizationId", "createdAt");
-CREATE UNIQUE INDEX "CandidateFactMapping_eccnCandidateId_extractedSpecId_criterionLabel_key" ON "CandidateFactMapping"("eccnCandidateId", "extractedSpecId", "criterionLabel");
-CREATE INDEX "FactIssue_organizationId_createdAt_idx" ON "FactIssue"("organizationId", "createdAt");
-CREATE INDEX "FactIssue_classificationRunId_issueType_idx" ON "FactIssue"("classificationRunId", "issueType");
-CREATE INDEX "ReviewerAction_organizationId_createdAt_idx" ON "ReviewerAction"("organizationId", "createdAt");
-CREATE INDEX "ReviewerAction_classificationRunId_createdAt_idx" ON "ReviewerAction"("classificationRunId", "createdAt");
+CREATE INDEX IF NOT EXISTS "ExtractedSpec_organizationId_createdAt_idx" ON "ExtractedSpec"("organizationId", "createdAt");
+CREATE INDEX IF NOT EXISTS "ExtractedSpec_classificationRunId_idx" ON "ExtractedSpec"("classificationRunId");
+CREATE INDEX IF NOT EXISTS "ECCNCandidate_organizationId_createdAt_idx" ON "ECCNCandidate"("organizationId", "createdAt");
+CREATE INDEX IF NOT EXISTS "ECCNCandidate_classificationRunId_idx" ON "ECCNCandidate"("classificationRunId");
+CREATE INDEX IF NOT EXISTS "Citation_organizationId_createdAt_idx" ON "Citation"("organizationId", "createdAt");
+CREATE INDEX IF NOT EXISTS "Citation_classificationRunId_idx" ON "Citation"("classificationRunId");
+CREATE UNIQUE INDEX IF NOT EXISTS "ReviewMemoVersion_classificationRunId_versionNumber_key" ON "ReviewMemoVersion"("classificationRunId", "versionNumber");
+CREATE INDEX IF NOT EXISTS "ReviewMemoVersion_organizationId_createdAt_idx" ON "ReviewMemoVersion"("organizationId", "createdAt");
+CREATE INDEX IF NOT EXISTS "ReviewPath_organizationId_createdAt_idx" ON "ReviewPath"("organizationId", "createdAt");
+CREATE INDEX IF NOT EXISTS "ReviewPath_classificationRunId_status_idx" ON "ReviewPath"("classificationRunId", "status");
+CREATE UNIQUE INDEX IF NOT EXISTS "ReviewPathFact_reviewPathId_extractedSpecId_key" ON "ReviewPathFact"("reviewPathId", "extractedSpecId");
+CREATE INDEX IF NOT EXISTS "RegulationSource_organizationId_createdAt_idx" ON "RegulationSource"("organizationId", "createdAt");
+CREATE UNIQUE INDEX IF NOT EXISTS "CandidateFactMapping_eccnCandidateId_extractedSpecId_criterionLabel_key" ON "CandidateFactMapping"("eccnCandidateId", "extractedSpecId", "criterionLabel");
+CREATE INDEX IF NOT EXISTS "FactIssue_organizationId_createdAt_idx" ON "FactIssue"("organizationId", "createdAt");
+CREATE INDEX IF NOT EXISTS "FactIssue_classificationRunId_issueType_idx" ON "FactIssue"("classificationRunId", "issueType");
+CREATE INDEX IF NOT EXISTS "ReviewerAction_organizationId_createdAt_idx" ON "ReviewerAction"("organizationId", "createdAt");
+CREATE INDEX IF NOT EXISTS "ReviewerAction_classificationRunId_createdAt_idx" ON "ReviewerAction"("classificationRunId", "createdAt");
 
 -- AddForeignKey
-ALTER TABLE "ExtractedSpec" ADD CONSTRAINT "ExtractedSpec_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'ExtractedSpec_organizationId_fkey'
+      AND conrelid = '"ExtractedSpec"'::regclass
+  ) THEN
+    ALTER TABLE "ExtractedSpec"
+      ADD CONSTRAINT "ExtractedSpec_organizationId_fkey"
+      FOREIGN KEY ("organizationId")
+      REFERENCES "Organization"("id")
+      ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 ALTER TABLE "ExtractedSpec" ADD CONSTRAINT "ExtractedSpec_sourceDocumentId_fkey" FOREIGN KEY ("sourceDocumentId") REFERENCES "Document"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "ECCNCandidate" ADD CONSTRAINT "ECCNCandidate_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'ECCNCandidate_organizationId_fkey'
+      AND conrelid = '"ECCNCandidate"'::regclass
+  ) THEN
+    ALTER TABLE "ECCNCandidate"
+      ADD CONSTRAINT "ECCNCandidate_organizationId_fkey"
+      FOREIGN KEY ("organizationId")
+      REFERENCES "Organization"("id")
+      ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 ALTER TABLE "ECCNCandidate" ADD CONSTRAINT "ECCNCandidate_regulationSourceId_fkey" FOREIGN KEY ("regulationSourceId") REFERENCES "RegulationSource"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "ECCNCandidate" ADD CONSTRAINT "ECCNCandidate_reviewPathId_fkey" FOREIGN KEY ("reviewPathId") REFERENCES "ReviewPath"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-ALTER TABLE "Citation" ADD CONSTRAINT "Citation_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'Citation_organizationId_fkey'
+      AND conrelid = '"Citation"'::regclass
+  ) THEN
+    ALTER TABLE "Citation"
+      ADD CONSTRAINT "Citation_organizationId_fkey"
+      FOREIGN KEY ("organizationId")
+      REFERENCES "Organization"("id")
+      ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 ALTER TABLE "Citation" ADD CONSTRAINT "Citation_reviewPathId_fkey" FOREIGN KEY ("reviewPathId") REFERENCES "ReviewPath"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "Citation" ADD CONSTRAINT "Citation_regulationSourceId_fkey" FOREIGN KEY ("regulationSourceId") REFERENCES "RegulationSource"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "ReviewMemoVersion" ADD CONSTRAINT "ReviewMemoVersion_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;

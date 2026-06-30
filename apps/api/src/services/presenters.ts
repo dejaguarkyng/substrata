@@ -344,15 +344,15 @@ export function presentRun(run: RunWithRelations) {
       visibility: run.document.visibility,
       summary: run.document.rawText?.slice(0, 420) ?? null,
     },
-    extractedSpecs: run.extractedSpecs.map(presentFact),
-    factIssues: run.factIssues.map(presentFactIssue),
-    reviewPaths: run.reviewPaths.map(presentReviewPath),
-    eccnCandidates: run.eccnCandidates
+    extractedSpecs: (run.extractedSpecs ?? []).map(presentFact),
+    factIssues: (run.factIssues ?? []).map(presentFactIssue),
+    reviewPaths: (run.reviewPaths ?? []).map(presentReviewPath),
+    eccnCandidates: (run.eccnCandidates ?? [])
       .filter((candidate) => candidate.isSpecificEccn)
       .map(presentCandidate),
-    reviewMemo: presentMemo(run.reviewMemo, run.reviewMemoVersions),
-    humanReviews: run.humanReviews.map(presentHumanReview),
-    reviewerActions: run.reviewerActions.map(presentReviewerAction),
+    reviewMemo: presentMemo(run.reviewMemo, run.reviewMemoVersions ?? []),
+    humanReviews: (run.humanReviews ?? []).map(presentHumanReview),
+    reviewerActions: (run.reviewerActions ?? []).map(presentReviewerAction),
     humanReviewStatus: review?.status ?? 'pending_review',
     hasReviewerConclusion: hasRecordedReviewerConclusion(review),
   };
